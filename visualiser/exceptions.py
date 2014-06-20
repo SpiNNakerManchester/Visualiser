@@ -8,3 +8,8 @@ class VisuliserException(Exception):
     pass
 
 
+class VisualiserInvalidInputException(VisuliserException):
+    """raised when a input param for a visualiser function is not valid.
+
+    :raise None: does not raise any known exceptions"""
+    pass

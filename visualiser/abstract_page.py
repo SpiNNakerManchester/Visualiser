@@ -46,3 +46,11 @@ class AbstractPage(object):
         """
         raise NotImplementedError
 
+    def is_page(self):
+        """helper method that states if the page is a real page or a window
+
+        :return: True or False
+        :rtype: bool
+        :raise NotImplementedError: as should not be called directly
+        """
+        raise NotImplementedError

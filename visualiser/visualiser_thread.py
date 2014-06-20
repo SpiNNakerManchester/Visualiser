@@ -4,8 +4,6 @@ import threading
 import thread
 import time
 from visualiser.visualiser_page_container import VisualiserMain
-from port_listener import PortListener
-
 import logging
 logger = logging.getLogger(__name__)
 import gtk
@@ -22,38 +20,27 @@ class VisualiserThread(threading.Thread):
     """
 
     #sets up listeners
-    def __init__(self, machine_time_step, time_scale_factor, has_board,
-                 timeout=0.0, start_simulation_method = None):
-        """
+    def __init__(self, timeout=0.0):
+        """constructor for the vis thread
+
+        :param timeout: param for the thread
+        :type timeout: int
+        :return: None
+        :rtype: None
+        :raise None: does not raise any known exception
 
         """
         gtk.threads_init()
-        self.machine_time_step = machine_time_step
-        self.time_scale_factor = time_scale_factor
-        self.has_board = has_board
         self.visulaiser_main = None
         self.visulaiser_listener = None
         threading.Thread.__init__(self)
         self.bufsize = 65536
         self.done = False
         self.port = None
-        self.start_simulation_method = start_simulation_method
         self.finish_event = threading.Event()
         if timeout > 0:
             thread.start_new_thread(_timeout, (self, timeout))
 
-    def start_now(self):
-        """
-
-        """
-        self.start_simulation_method()
-        self.finish_event.set()
-
-    def wait_for_finish(self):
-        """
-
-        """
-        self.finish_event.wait()
 
     def set_timeout(self, timeout):
         """supports changing how long to timeout
@@ -95,21 +82,9 @@ class VisualiserThread(threading.Thread):
 
         :return: None
         :rtype: None
-        :raise None:   does not raise any known exceptions
+        :raise None:  does not raise any known exceptions
         """
-        start_method = None
-        print "Start: ", self.start_simulation_method
-        if self.start_simulation_method is not None:
-            start_method = getattr(self, "start_now")
-
-        if self.has_board and self.port is not None:
-            self.visulaiser_listener = PortListener(self.machine_time_step,
-                                                    self.time_scale_factor)
-            self.visulaiser_listener.set_port(self.port)
-        else:
-            logger.warn("you are running the visualiser without a board."
-                        " Aspects of the visualiser may not work")
-        self.visulaiser_main = VisualiserMain(self, start_method)
+        self.visulaiser_main = VisualiserMain(self)
         self.visulaiser_listener.set_visualiser(self.visulaiser_main)
 
         logger.info("[visualiser] Starting")
@@ -120,15 +95,6 @@ class VisualiserThread(threading.Thread):
         self.visulaiser_main.main()
         gtk.threads_leave()
         logger.debug("[visualiser] Exiting")
-
-    def set_port(self, port):
-        """sets the listeners port
-
-        :return: None
-        :rtype: None
-        :raise None:   does not raise any known exceptions
-        """
-        self.port = port
 
 
 if __name__ == "__main__":
