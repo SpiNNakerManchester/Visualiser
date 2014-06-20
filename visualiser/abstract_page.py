@@ -31,7 +31,7 @@ class AbstractPage(object):
 
         :param details: the details of a spike
         :type details: string
-        :return None (should never be called directly)
+        :return: None (should never be called directly)
         :rtype: None
         :raise NotImplementedError: as should not be called directly
         """
