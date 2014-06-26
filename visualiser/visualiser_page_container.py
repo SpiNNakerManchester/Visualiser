@@ -171,6 +171,46 @@ class VisualiserMain(object):
                     VisualiserInvalidInputException("the page is not a "
                                                     "recogonised page")
 
+    def does_page_exist(self, page):
+        """helper method to check if a page already exists
+        :param page: the page to locate in the container
+        :type page: a derived from abstract page
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        if page.is_page:
+            return self._pages.contains(page)
+        else:
+            return page in self._open_windows
+
+    def remove_page(self, page):
+        """helper method to allow front ends to remove pages to the main
+           container
+
+        :param page: the page to add to the container
+        :type page: a derived from abstract page
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        if page.is_page:
+            self._pages.remove(page)
+        else:
+            self._open_windows.remove(page)
+
+    def remove_menu_item(self, label):
+        """helper method to allow front ends to remove menu items to the main
+           container
+        :param label: the label used by the contianer to mark the menu item
+        :type label: str
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        pass
+
+
     def delete_event(self, widget, event, data=None):
         """method to kill a widgit
         :param widget: the widget that called delete
@@ -210,7 +250,6 @@ class VisualiserMain(object):
         """
         gtk.main()
 
-#test boot method
-if __name__ == "__main__":
-    hello = VisualiserMain(None)
-    hello.main()
+    @property
+    def pages(self):
+        return self._pages

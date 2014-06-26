@@ -20,7 +20,7 @@ class VisualiserThread(threading.Thread):
     """
 
     #sets up listeners
-    def __init__(self, timeout=0.0):
+    def __init__(self, timeout=0.0, has_board=True):
         """constructor for the vis thread
 
         :param timeout: param for the thread
@@ -31,13 +31,14 @@ class VisualiserThread(threading.Thread):
 
         """
         gtk.threads_init()
-        self.visulaiser_main = None
-        self.visulaiser_listener = None
+        self._has_board = has_board
+        self._visulaiser_main = None
+        self._visulaiser_listener = None
         threading.Thread.__init__(self)
-        self.bufsize = 65536
-        self.done = False
-        self.port = None
-        self.finish_event = threading.Event()
+        self._bufsize = 65536
+        self._done = False
+        self._port = None
+        self._finish_event = threading.Event()
         if timeout > 0:
             thread.start_new_thread(_timeout, (self, timeout))
 
@@ -55,6 +56,9 @@ class VisualiserThread(threading.Thread):
         if timeout > 0:
             thread.start_new_thread(_timeout, (self, timeout))
 
+    def set_visualiser_listener(self, listener):
+        self._visulaiser_listener = listener
+
     def set_bufsize(self, bufsize):
         """supports changing of the bufsize
 
@@ -64,7 +68,7 @@ class VisualiserThread(threading.Thread):
         :rtype: None
         :raise None:  does not raise any known exceptions
         """
-        self.bufsize = bufsize
+        self._bufsize = bufsize
 
     def stop(self):
         """stops the visualiser thread
@@ -73,9 +77,9 @@ class VisualiserThread(threading.Thread):
         :raise None:   does not raise any known exceptions
         """
         logger.info("[visualiser] Stopping")
-        self.done = True
-        if self.has_board and self.visulaiser_listener is not None:
-            self.visulaiser_listener.stop()
+        self._done = True
+        if self._has_board and self._visulaiser_listener is not None:
+            self._visulaiser_listener.stop()
 
     def run(self):
         """opening method for this thread
@@ -84,21 +88,77 @@ class VisualiserThread(threading.Thread):
         :rtype: None
         :raise None:  does not raise any known exceptions
         """
-        self.visulaiser_main = VisualiserMain(self)
-        self.visulaiser_listener.set_visualiser(self.visulaiser_main)
-
-        logger.info("[visualiser] Starting")
-        if self.visulaiser_listener is not None:
-            self.visulaiser_listener.start()
-
+        self._visulaiser_main = VisualiserMain(self)
         gtk.threads_enter()
-        self.visulaiser_main.main()
+        self._visulaiser_main.main()
         gtk.threads_leave()
         logger.debug("[visualiser] Exiting")
 
+    def add_page(self, page, label):
+        """helper method to allow front ends to add pages to the main container
 
-if __name__ == "__main__":
-    logging.basicConfig()
-    logger.setLevel(logging.DEBUG)
-    visulaiser = VisualiserThread(None, 1, 1, True)
-    visulaiser.start()
+        :param page: the page to add to the container
+        :param label: the label used by the contianer to mark the page
+        :type page: a derived from abstract page
+        :type label: str
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        self._visulaiser_main.add_page(page, label)
+
+    def add_menu_item(self, label, function_call):
+        """helper method to allow front ends to add menu items to the main
+        container
+
+        :param function_call: the callback for when the menu item is clicked
+        :param label: the label used by the contianer to mark the menu item
+        :type function_call: a callable object
+        :type label: str
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        self._visulaiser_main.add_menu_item(self, label, function_call)
+
+    def remove_menu_item(self, label):
+        """helper method to allow front ends to remove menu items to the main
+           container
+        :param label: the label used by the contianer to mark the menu item
+        :type label: str
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        self._visulaiser_main.remove_menu_item(self, label)
+
+    def remove_page(self, page):
+        """helper method to allow front ends to remove pages to the main
+           container
+
+        :param page: the page to add to the container
+        :type page: a derived from abstract page
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        self._visulaiser_main.remove_page(page)
+
+    def does_page_exist(self, page):
+        """helper method to check if a page already exists
+        :param page: the page to locate in the container
+        :type page: a derived from abstract page
+        :return: None
+        :rtype: None
+        :raise None:  does not raise any known exceptions
+        """
+        return self._visulaiser_main.does_page_exist(page)
+
+    def pages(self):
+        """helper method that returns the collection of pages
+
+        :return: list of pages
+        :rtype: list
+        :raise None:  does not raise any known exceptions
+        """
+        return self._visulaiser_main.pages
