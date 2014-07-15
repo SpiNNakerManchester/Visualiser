@@ -4,3 +4,5 @@
 /.settings
 /doc/build
 *.pyc
+.idea
+/doc.source
