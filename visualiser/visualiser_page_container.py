@@ -1,5 +1,3 @@
-__author__ = 'stokesa6'
-
 import gtk
 import logging
 from visualiser import exceptions
@@ -157,9 +155,10 @@ class VisualiserMain(object):
                label or page are not valid params. Such as not a str\
                or a dirivitive of abstract page.
         """
-        if isinstance(page_label, str) and issubclass(page, AbstractPage):
+        if isinstance(page_label, str) and isinstance(page, AbstractPage):
             if page.is_page():
-                self._pages.append_page(page, page_label)
+                page_gtk_label = gtk.Label(page_label)
+                self._pages.append_page(page, page_gtk_label)
             else:
                 self._open_windows.append(page)
         else:
@@ -208,10 +207,10 @@ class VisualiserMain(object):
         :rtype: None
         :raise None:  does not raise any known exceptions
         """
-        pass
+        raise NotImplementedError
 
-
-    def delete_event(self, widget, event, data=None):
+    @staticmethod
+    def delete_event(widget, event, data=None):
         """method to kill a widgit
         :param widget: the widget that called delete
         :param event: the event used

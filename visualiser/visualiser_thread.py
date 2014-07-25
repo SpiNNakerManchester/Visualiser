@@ -32,7 +32,7 @@ class VisualiserThread(threading.Thread):
         """
         gtk.threads_init()
         self._has_board = has_board
-        self._visulaiser_main = None
+        self._visulaiser_main = VisualiserMain(self)
         self._visulaiser_listener = None
         threading.Thread.__init__(self)
         self._bufsize = 65536
@@ -88,7 +88,6 @@ class VisualiserThread(threading.Thread):
         :rtype: None
         :raise None:  does not raise any known exceptions
         """
-        self._visulaiser_main = VisualiserMain(self)
         gtk.threads_enter()
         self._visulaiser_main.main()
         gtk.threads_leave()
