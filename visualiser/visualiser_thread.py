@@ -39,6 +39,7 @@ class VisualiserThread(threading.Thread):
         self._done = False
         self._port = None
         self._finish_event = threading.Event()
+        self.setDaemon(True)
         if timeout > 0:
             thread.start_new_thread(_timeout, (self, timeout))
 
