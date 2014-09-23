@@ -1,9 +1,7 @@
-__author__ = 'stokesa6'
-
 import threading
 import thread
 import time
-from visualiser.visualiser_page_container import VisualiserMain
+from visualiser_framework.visualiser_page_container import VisualiserMain
 import logging
 logger = logging.getLogger(__name__)
 import gtk
@@ -72,12 +70,12 @@ class VisualiserThread(threading.Thread):
         self._bufsize = bufsize
 
     def stop(self):
-        """stops the visualiser thread
+        """stops the visualiser_framework thread
         :return: None
         :rtype: None
         :raise None:   does not raise any known exceptions
         """
-        logger.info("[visualiser] Stopping")
+        logger.info("[visualiser_framework] Stopping")
         self._done = True
         if self._has_board and self._visulaiser_listener is not None:
             self._visulaiser_listener.stop()
@@ -92,7 +90,7 @@ class VisualiserThread(threading.Thread):
         gtk.threads_enter()
         self._visulaiser_main.main()
         gtk.threads_leave()
-        logger.debug("[visualiser] Exiting")
+        logger.debug("[visualiser_framework] Exiting")
 
     def add_page(self, page, label):
         """helper method to allow front ends to add pages to the main container

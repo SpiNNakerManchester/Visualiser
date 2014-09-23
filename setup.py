@@ -8,5 +8,5 @@ setup(
     version="0.1-SNAPSHOT",
     description="Spinnaker Visualiser Framework",
     url="https://github.com/SpiNNakerManchester/Visualiser",
-    packages=['visualiser']
+    packages=['visualiser_framework']
 )

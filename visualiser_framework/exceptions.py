@@ -1,4 +1,3 @@
-__author__ = 'stokesa6'
 
 
 class VisuliserException(Exception):
@@ -9,7 +8,7 @@ class VisuliserException(Exception):
 
 
 class VisualiserInvalidInputException(VisuliserException):
-    """raised when a input param for a visualiser function is not valid.
+    """raised when a input param for a visualiser_framework function is not valid.
 
     :raise None: does not raise any known exceptions"""
     pass

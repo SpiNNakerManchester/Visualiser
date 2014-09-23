@@ -1,7 +1,7 @@
 import gtk
 import logging
-from visualiser import exceptions
-from visualiser.abstract_page import AbstractPage
+from visualiser_framework import exceptions
+from visualiser_framework.abstract_page import AbstractPage
 logger = logging.getLogger(__name__)
 
 
@@ -123,7 +123,7 @@ class VisualiserMain(object):
         :type function_call: method
         :return: None
         :rtype: None
-        :raise visualiser.exceptions.VisualiserInvalidInputException: when the \
+        :raise visualiser_framework.exceptions.VisualiserInvalidInputException: when the \
                label or function_call are not valid params. Such as not a str\
                or a function call.
         """
@@ -148,10 +148,10 @@ class VisualiserMain(object):
 
         :param page: the page to be used by the vis
         :param page_label: the label presented at the top of the page (tab)
-        :type page: dirivitive from visualiser.abstract_page to be added to the\
+        :type page: dirivitive from visualiser_framework.abstract_page to be added to the\
                     vis
-        :rtype: dirivitive from visualiser.abstract_page
-        :raise visualiser.exceptions.VisualiserInvalidInputException: when the \
+        :rtype: dirivitive from visualiser_framework.abstract_page
+        :raise visualiser_framework.exceptions.VisualiserInvalidInputException: when the \
                label or page are not valid params. Such as not a str\
                or a dirivitive of abstract page.
         """
