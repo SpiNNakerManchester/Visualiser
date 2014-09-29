@@ -22,7 +22,7 @@ Execute the following to install both gtk and pygtk:
 Fedora Linux
 ------------
 Execute the following to install both gtk and pygtk:
-    sudo apt-get install pygtk2
+    sudo yum install pygtk2
 
 Windows 7/8 64-bit
 ------------------
