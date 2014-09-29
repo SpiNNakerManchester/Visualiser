@@ -6,7 +6,7 @@ fi
 
 function create_link {
     if [ ! -e $VIRTUAL_ENV/lib/python2.7/site-packages/$1 ]; then
-        ln -s /usr/lib/python2.7/site-packages/$1 $VIRTUAL_ENV/lib/python2.7/site-packages/$1
+        ln -s /usr/lib/python2.7/dist-packages/$1 $VIRTUAL_ENV/lib/python2.7/site-packages/$1
     fi
 }
 
