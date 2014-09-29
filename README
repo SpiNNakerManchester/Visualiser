@@ -83,10 +83,10 @@ To install in a virtualenv, it is easier if gtk and pygtk are installed outside
 of the virtualenv first.  Then, with the virtualenv enabled, run:
     pip install Visualiser --no-deps
 then, depending on which system you are installing on, run:
-    32-bit Fedora Linux: virtualenv-gtk2.0-fedora32.sh
-    64-bit Fedora Linux: virtualenv-gtk2.0-fedora64.sh
-    Ubuntu Linux:        virtualenv-gtk2.0-ubuntu.sh
-    Windows 7/8:         virtualenv-gtk2.0-windows.bat
+    32-bit Fedora Linux:            virtualenv-gtk2.0-fedora32.sh
+    64-bit Fedora Linux:            virtualenv-gtk2.0-fedora64.sh
+    Ubuntu Linux:                   virtualenv-gtk2.0-ubuntu.sh
+    Windows 7/8 (as Administrator): virtualenv-gtk2.0-windows.bat
 
 
 Developer Installation
@@ -109,7 +109,7 @@ pygtk are installed outside of the virtualenv first.  Then, with the virtualenv
 enabled, run:
     python setup.py develop
 then, depending on which system you are installing on, run:
-    32-bit Fedora Linux: virtualenv-gtk2.0-fedora32.sh
-    64-bit Fedora Linux: virtualenv-gtk2.0-fedora64.sh
-    Ubuntu Linux:        virtualenv-gtk2.0-ubuntu.sh
-    Windows 7/8:         virtualenv-gtk2.0-windows.bat
+    32-bit Fedora Linux:            virtualenv-gtk2.0-fedora32.sh
+    64-bit Fedora Linux:            virtualenv-gtk2.0-fedora64.sh
+    Ubuntu Linux:                   virtualenv-gtk2.0-ubuntu.sh
+    Windows 7/8 (as Administrator): virtualenv-gtk2.0-windows.bat

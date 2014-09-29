@@ -6,3 +6,6 @@
 *.pyc
 .idea
 /doc.source
+/build
+/dist
+/Visualiser.egg-info
