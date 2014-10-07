@@ -9,7 +9,7 @@ setup(
     description="Spinnaker Visualiser Framework",
     url="https://github.com/SpiNNakerManchester/Visualiser",
     packages=['visualiser_framework'],
-    install_requires=['gtk'],
+    install_requires=['pygtk'],
     scripts=['scripts/virtualenv-gtk2.0-fedora32.sh',
              'scripts/virtualenv-gtk2.0-fedora64.sh',
              'scripts/virtualenv-gtk2.0-ubuntu.sh',
