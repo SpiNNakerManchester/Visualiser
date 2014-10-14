@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 class VisualiserMain(object):
     """main entrace to the gtk thread"""
 
-    def __init__(self, parent):
+    def __init__(self, parent, to_add_pages):
         """constructor for the main gtk thread.
 
         :param parent: the main vis thread
         :type parent: visualiser_thread
-        :return a new vis page container
+        :return a new vis _page container
         :rtype: visulaiser.visualiser_page_container
         :raise None: this method does not raise any known exception
 
@@ -27,10 +27,15 @@ class VisualiserMain(object):
         self._open_windows = list()
         #start making the main window
         self._window = self._set_up_main_window()
-        self._create_the_notebook_that_holds_pages()
         self._add_menus()
-        #set current page to X
-        self._pages.set_current_page(2)
+        self._create_the_notebook_that_holds_pages(to_add_pages)
+        #set all pages to be visable
+        no = self._pages.get_n_pages()
+        for page_id in range(self._pages.get_n_pages()):
+            page = self._pages.get_nth_page(page_id)
+            page.show()
+        #set current _page to X
+        #self._pages.set_current_page(2)
         #display window
         self._window.show()
         self._parent = parent
@@ -57,7 +62,7 @@ class VisualiserMain(object):
         return window
 
 
-    def _create_the_notebook_that_holds_pages(self):
+    def _create_the_notebook_that_holds_pages(self, to_add_pages):
         """creates the container for the future pages
 
         :return: None
@@ -70,6 +75,10 @@ class VisualiserMain(object):
         self._vbox.pack_start(self._pages, True, True, 1)
         self._pages.show_tabs = True
         self._pages.show_border = True
+        no = self._pages.get_n_pages()
+        for page in to_add_pages:
+            self._pages.prepend_page(page.get_frame(), page.label)
+            no = self._pages.get_n_pages()
 
     def _add_menus(self):
         """ adds basic menus for the vis
@@ -144,21 +153,22 @@ class VisualiserMain(object):
                                                     "a callable object")
 
     def add_page(self, page, page_label):
-        """helper method to allow the front ends to add a page to the visulaiser
+        """helper method to allow the front ends to add a _page to the visulaiser
 
-        :param page: the page to be used by the vis
-        :param page_label: the label presented at the top of the page (tab)
+        :param page: the _page to be used by the vis
+        :param page_label: the label presented at the top of the _page (tab)
         :type page: dirivitive from visualiser_framework.abstract_page to be added to the\
                     vis
         :rtype: dirivitive from visualiser_framework.abstract_page
         :raise visualiser_framework.exceptions.VisualiserInvalidInputException: when the \
-               label or page are not valid params. Such as not a str\
-               or a dirivitive of abstract page.
+               label or _page are not valid params. Such as not a str\
+               or a dirivitive of abstract _page.
         """
         if isinstance(page_label, str) and isinstance(page, AbstractPage):
             if page.is_page():
                 page_gtk_label = gtk.Label(page_label)
                 self._pages.append_page(page, page_gtk_label)
+                self._pages.show()
             else:
                 self._open_windows.append(page)
         else:
@@ -167,13 +177,21 @@ class VisualiserMain(object):
                     VisualiserInvalidInputException("the label is not a string")
             if not issubclass(page, AbstractPage):
                 raise exceptions.\
-                    VisualiserInvalidInputException("the page is not a "
-                                                    "recogonised page")
+                    VisualiserInvalidInputException("the _page is not a "
+                                                    "recogonised _page")
+        #set all pages to be visable
+        for page_id in range(self._pages.get_n_pages()):
+            page = self._pages.get_nth_page(page_id)
+            page.show()
+        self._window.queue_draw()
+        self.pages.queue_draw()
+        self.pages.queue_draw_area(0,0,-1,-1)
+
 
     def does_page_exist(self, page):
-        """helper method to check if a page already exists
-        :param page: the page to locate in the container
-        :type page: a derived from abstract page
+        """helper method to check if a _page already exists
+        :param page: the _page to locate in the container
+        :type page: a derived from abstract _page
         :return: None
         :rtype: None
         :raise None:  does not raise any known exceptions
@@ -187,8 +205,8 @@ class VisualiserMain(object):
         """helper method to allow front ends to remove pages to the main
            container
 
-        :param page: the page to add to the container
-        :type page: a derived from abstract page
+        :param page: the _page to add to the container
+        :type page: a derived from abstract _page
         :return: None
         :rtype: None
         :raise None:  does not raise any known exceptions
