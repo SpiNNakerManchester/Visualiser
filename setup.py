@@ -4,7 +4,7 @@ except ImportError:
     from distutils.core import setup
 
 setup(
-    name="Visualiser",
+    name="SpiNNaker_Visualiser",
     version="0.1-SNAPSHOT",
     description="Spinnaker Visualiser Framework",
     url="https://github.com/SpiNNakerManchester/Visualiser",
