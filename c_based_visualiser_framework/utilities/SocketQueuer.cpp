@@ -79,7 +79,6 @@ void SocketQueuer::init_sdp_listening(int listen_port) {
 
 void SocketQueuer::InternalThreadEntry(){
 	unsigned char buffer_input[1515];
-	printf("started receiving \n");
 	while (1) {                             // for ever ever, ever ever.
 		int numbytes_input = recvfrom(this->sockfd_input, (char *) buffer_input,
 				sizeof(buffer_input), 0, (sockaddr*) &this->si_other,
@@ -92,7 +91,6 @@ void SocketQueuer::InternalThreadEntry(){
 			fprintf(stderr, "Error - packet too short\n");
 			continue;
 		}
-		printf ("recieved a message \n");
         // create eieio message
 		struct eieio_message* new_message = new eieio_message();
 
@@ -106,12 +104,9 @@ void SocketQueuer::InternalThreadEntry(){
 		new_message->data = (char *) malloc(numbytes_input -2);
 		memcpy(new_message->data, &buffer_input[2], numbytes_input -2);
 		// load message into buffer
-		printf ("loading into queue \n");
 		pthread_mutex_lock(&this->spike_mutex);
-		printf ("after mutex \n");
 		this->queue.push_back(*new_message);
 		pthread_cond_signal(&this->cond);
-		printf ("before mutex unlock \n");
 		pthread_mutex_unlock(&this->spike_mutex);
 		printf ("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
 				"count=%i data={", new_message->header.p,
@@ -127,12 +122,12 @@ void SocketQueuer::InternalThreadEntry(){
 
 eieio_message SocketQueuer::get_next_packet(){
 	eieio_message packet;
-
 	pthread_mutex_lock(&this->spike_mutex);
 	while(this->queue.size() == 0) {
 	            pthread_cond_wait(&this->cond, &this->spike_mutex);
 	        }
 	packet = this->queue.front();
+	this->queue.pop_front();
 	pthread_mutex_unlock(&this->spike_mutex);
 	return packet;
 }

@@ -49,8 +49,8 @@ namespace glutFramework {
 
 		// Initialize GLUT
 		glutInit(&argc, argv);
-		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-		glutInitWindowPosition(WINDOW_X_POSITION, WINDOW_Y_POSITION);
+		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+		glutInitWindowPosition(0, 100);
 		glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 		glutCreateWindow(title.c_str());
 
@@ -158,12 +158,8 @@ namespace glutFramework {
 	// **************************
 	void GlutFramework::init() {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
-
-		glEnable(GL_LIGHTING);
-		glEnable(GL_LIGHT0);
+		glColor3f(1.0, 1.0, 1.0);
 		glShadeModel(GL_SMOOTH);
-		glEnable(GL_DEPTH_TEST);
-
 		load();
 	}
 
