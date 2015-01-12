@@ -1,9 +1,13 @@
 
 all:
-	g++ -c main.cpp
-	g++ -c DatabaseReader.cpp
-	g++ -c RasterPlot.cpp
-	g++ -c SocketQueuer.cpp
-	g++ -c Threadable.cpp
-	g++ -c DatabaseMessageConnection.cpp
-	g++ -o vis main.o DatabaseReader.o DatabaseMessageConnection.o RasterPlot.o SocketQueuer.o Threadable.o -lopengl32 -lglu32 -lfreeglut -lpthread -lws2_32 -lsqlite3
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c main.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c glut_framework/GlutFramework.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/DatabaseReader.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c raster_view/RasterPlot.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c raster_view/PacketConverter.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/SocketQueuer.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/Threadable.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/DatabaseMessageConnection.cpp -fpermissive
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c glut_framework/PerformanceTimer.cpp
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c glut_framework/Keyboard.cpp
+	g++ -o vis main.o DatabaseReader.o RasterPlot.o PacketConverter.o DatabaseMessageConnection.o SocketQueuer.o Threadable.o GlutFramework.o PerformanceTimer.o Keyboard.o -lfreeglut_static -lopengl32 -lwinmm -lgdi32 -lglu32 -lpthread -lws2_32 -lsqlite3

@@ -63,9 +63,7 @@ void PacketConverter::translate_eieio_message_to_points(
 		}
 		printf ("}\n");
 
-	}
-	else
-	{
+	} else {
 		int y_pos = (int(message.data[0]) << 24) +
 					(int(message.data[1]) << 16) +
 					(int(message.data[2]) << 8) +

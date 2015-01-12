@@ -9,9 +9,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #else
-#define _WIN32_WINNT 0x501
+#include <windows.h>
 #include <ws2tcpip.h>
-#include <winsock2.h>
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
 #define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
 #define close(sock)

@@ -10,7 +10,6 @@
 #include <cstdlib>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 
 using namespace std;
 
@@ -111,10 +110,9 @@ void SocketQueuer::InternalThreadEntry(){
 		pthread_mutex_lock(&this->spike_mutex);
 		printf ("after mutex \n");
 		this->queue.push_back(*new_message);
+		pthread_cond_signal(&this->cond);
 		printf ("before mutex unlock \n");
 		pthread_mutex_unlock(&this->spike_mutex);
-		printf ("before signal \n");
-		pthread_cond_signal(&this->cond);
 		printf ("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
 				"count=%i data={", new_message->header.p,
 				new_message->header.f, new_message->header.d,
@@ -129,15 +127,13 @@ void SocketQueuer::InternalThreadEntry(){
 
 eieio_message SocketQueuer::get_next_packet(){
 	eieio_message packet;
-    printf ("waiting for packet \n");
+
 	pthread_mutex_lock(&this->spike_mutex);
 	while(this->queue.size() == 0) {
 	            pthread_cond_wait(&this->cond, &this->spike_mutex);
 	        }
 	packet = this->queue.front();
-	this->queue.pop_front();
 	pthread_mutex_unlock(&this->spike_mutex);
-	printf ("recieved packet \n");
 	return packet;
 }
 

@@ -11,7 +11,6 @@
 #include "raster_view/RasterPlot.h"
 #include "utilities/colour.h"
 
-using namespace std;
 /*
  * main.cpp
  *main entrnace to the vis
@@ -47,16 +46,16 @@ int main(int argc, char **argv){
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
 
-		if (strcmp(argv[arg_index], "-hand_shake_listen_port") == 0){
+		if (strcmp(argv[arg_index], "-hand_shake_port") == 0){
 			hand_shake_listen_port_no = atoi(get_next_arg(arg_index, argv, argc));
 		}
-		if (strcmp(argv[arg_index], "-database_filepath") == 0){
+		if (strcmp(argv[arg_index], "-database") == 0){
 			absolute_file_path = get_next_arg(arg_index, argv, argc);
 		}
-		if (strcmp(argv[arg_index], "-colour_map_filepath") == 0){
+		if (strcmp(argv[arg_index], "-colour_map") == 0){
 			colour_file_path = get_next_arg(arg_index, argv, argc);
 		}
-		if (strcmp(argv[arg_index], "-packet_listen_port") == 0){
+		if (strcmp(argv[arg_index], "-port") == 0){
 			packet_listener_port_no = atoi(get_next_arg(arg_index, argv, argc));
 		}
     }
@@ -64,28 +63,21 @@ int main(int argc, char **argv){
 	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL or
 			absolute_file_path == NULL or packet_listener_port_no == -1) {
 		printf("Usage is \n "
-				"-hand_shake_listen_port "
+				"-hand_shake_port "
 				"<port which the visualiser will listen to for database hand shaking> \n"
-		        " -database_filepath "
+		        " -database "
 		        "<aboluste file path to where the database is located>\n"
-			    " -colour_map_filepath "
+			    " -colour_map "
 			    "<aboluste file path to where the colour is located>\n"
-				" -packet_listen_port "
+				" -port "
 				"<port which the visualiser will listen for packets>\n"
 			    " -");
-		printf("Example code would be \n\n "
-				"./vis  -hand_shake_listen_port 19999 -host localhost "
-				"-database_filepath /home/S06/stokesa6/spinniker/tool_cha_report"
-				"s/application_data/latest/visualiser_database.db -colour_map_"
-				"filepath /home/S06/stokesa6/spinniker/c_visualisers/c_vis_"
-				"database/test_data/synfire_colors -hand_shake_send_port "
-				"19998 -packet_listen_port 17895");
 		return 1;
 	}
 
-	map<int, char*> y_axis_labels;
-	map<int, int> key_to_neuronid_map;
-	map<int, struct colour> neuron_id_to_colour_map;
+	std::map<int, char*> y_axis_labels;
+	std::map<int, int> key_to_neuronid_map;
+	std::map<int, struct colour> neuron_id_to_colour_map;
 	// initilise the visulaiser config
 	DatabaseMessageConnection hand_shaker(hand_shake_listen_port_no);
 	eieio_message message;
@@ -111,6 +103,7 @@ int main(int argc, char **argv){
 	SocketQueuer queuer(packet_listener_port_no);
 	queuer.start();
     //create visualiser
-    RasterPlot plotter(argc, argv, &queuer, y_axis_labels, key_to_neuronid_map);
+    RasterPlot plotter(argc, argv);
+	plotter.start(&queuer, &y_axis_labels, &key_to_neuronid_map);
 	return 0;
 }
