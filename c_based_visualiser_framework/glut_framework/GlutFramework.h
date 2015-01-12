@@ -88,7 +88,7 @@ namespace glutFramework {
 		std::string title;
 		double elapsedTimeInSeconds;
 		static GlutFramework *instance;
-
+		int window;
 
 		Vector<float> eyeVector;
 		Vector<float> centerVector;
@@ -100,10 +100,8 @@ namespace glutFramework {
 	public:
 		// Constants
 		const static int FPS = 60;			// Frames per second
-		const static int WINDOW_WIDTH = 640;
-		const static int WINDOW_HEIGHT = 480;
-		const static int WINDOW_X_POSITION = 100;
-		const static int WINDOW_Y_POSITION = 100;
+		const static int WINDOW_WIDTH = 800;
+		const static int WINDOW_HEIGHT = 600;
 
 		const static double FRAME_TIME;		// Frame time is in milliseconds calculated using FPS
 

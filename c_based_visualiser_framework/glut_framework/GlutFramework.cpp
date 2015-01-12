@@ -50,9 +50,9 @@ namespace glutFramework {
 		// Initialize GLUT
 		glutInit(&argc, argv);
 		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-		glutInitWindowPosition(0, 100);
 		glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-		glutCreateWindow(title.c_str());
+		glutInitWindowPosition(0, 100);
+		this->window = glutCreateWindow(title.c_str());
 
 		// Function callbacks with wrapper functions
 		glutReshapeFunc(reshapeWrapper);
@@ -140,19 +140,19 @@ namespace glutFramework {
 	// Initialize the projection/view matricies.
 	void GlutFramework::setDisplayMatricies() {
 		/* Setup the projection and model view matricies */
-		int width = glutGet( GLUT_WINDOW_WIDTH );
-		int height = glutGet( GLUT_WINDOW_HEIGHT );
-		float aspectRatio = width/height;
-		glViewport( 0, 0, width, height );
-		glMatrixMode( GL_PROJECTION );
-		glLoadIdentity();
-		gluPerspective( 60, aspectRatio, 1, 500.0 );
+		//int width = glutGet( GLUT_WINDOW_WIDTH );
+		//int height = glutGet( GLUT_WINDOW_HEIGHT );
+		//float aspectRatio = width/height;
+        //glViewport( 0, 0, width, height );
+		//glMatrixMode( GL_PROJECTION );
+		//glLoadIdentity();
+		//gluPerspective( 60, aspectRatio, 1, 500.0 );
 
-		glMatrixMode( GL_MODELVIEW );
-		glLoadIdentity();
-		gluLookAt(eyeVector.x, eyeVector.y, eyeVector.z,
-				  centerVector.x, centerVector.y, centerVector.z,
-				  upVector.x, upVector.y, upVector.z);
+		//glMatrixMode( GL_MODELVIEW );
+		//glLoadIdentity();
+		//gluLookAt(eyeVector.x, eyeVector.y, eyeVector.z,
+		//		  centerVector.x, centerVector.y, centerVector.z,
+		//		  upVector.x, upVector.y, upVector.z);
 	}
 
 	void GlutFramework::setupLights() {

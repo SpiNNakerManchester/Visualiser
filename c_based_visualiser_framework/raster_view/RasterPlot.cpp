@@ -175,7 +175,7 @@ void RasterPlot::display(float time) {
 }
 
 void RasterPlot::reshape(int width, int height) {
-    if (glutGetWindow() == window) {
+    if (glutGetWindow() == this->window) {
         fprintf(stderr, "Reshape to %d, %d\n", width, height);
         windowWidth = width;
         windowHeight = height;
