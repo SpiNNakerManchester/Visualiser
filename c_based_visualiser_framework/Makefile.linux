@@ -1,0 +1,13 @@
+
+all:
+	g++ -c main.cpp
+	g++ -c glut_framework/GlutFramework.cpp
+	g++ -c utilities/DatabaseReader.cpp
+	g++ -c raster_view/RasterPlot.cpp
+	g++ -c raster_view/PacketConverter.cpp
+	g++ -c utilities/SocketQueuer.cpp
+	g++ -c utilities/Threadable.cpp
+	g++ -c utilities/DatabaseMessageConnection.cpp
+	g++ -c glut_framework/PerformanceTimer.cpp
+	g++ -c glut_framework/Keyboard.cpp
+	g++ -o vis main.o DatabaseReader.o RasterPlot.o PacketConverter.o DatabaseMessageConnection.o SocketQueuer.o Threadable.o GlutFramework.o PerformanceTimer.o Keyboard.o -lGL -lGLU -lglut -lpthread -lsqlite3

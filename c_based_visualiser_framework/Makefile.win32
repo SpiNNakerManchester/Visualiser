@@ -1,0 +1,9 @@
+
+all:
+	g++ -c main.cpp
+	g++ -c DatabaseReader.cpp
+	g++ -c RasterPlot.cpp
+	g++ -c SocketQueuer.cpp
+	g++ -c Threadable.cpp
+	g++ -c DatabaseMessageConnection.cpp
+	g++ -o vis main.o DatabaseReader.o DatabaseMessageConnection.o RasterPlot.o SocketQueuer.o Threadable.o -lopengl32 -lglu32 -lfreeglut -lpthread -lws2_32 -lsqlite3

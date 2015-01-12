@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdexcept>
+#include <map>
+#include <deque>
+#include <string.h>
+#include "main.h"
+#include "utilities/DatabaseReader.h"
+#include "utilities/DatabaseMessageConnection.h"
+#include "utilities/SocketQueuer.h"
+#include "raster_view/RasterPlot.h"
+#include "utilities/colour.h"
+
+using namespace std;
+/*
+ * main.cpp
+ *main entrnace to the vis
+ *  Created on: 2 Dec 2014
+ *      Author: alan and rowley
+ */
+
+char* get_next_arg(int position, char **argv, int argc){
+	if (position + 1 > argc){
+		throw "missing a element";
+	}
+	else{
+		return argv[position + 1];
+	}
+}
+
+int main(int argc, char **argv){
+
+#ifdef WIN32
+    WSADATA wsaData; // if this doesn't work
+    //WSAData wsaData; // then try this instead
+
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0) {
+        fprintf(stderr, "WSAStartup failed.\n");
+        exit(1);
+    }
+#endif
+
+    int hand_shake_listen_port_no = -1;
+    int packet_listener_port_no = -1;
+    char* absolute_file_path = NULL;
+    char* colour_file_path = NULL;
+
+    for (int arg_index = 1; arg_index < argc; arg_index+=2){
+
+		if (strcmp(argv[arg_index], "-hand_shake_listen_port") == 0){
+			hand_shake_listen_port_no = atoi(get_next_arg(arg_index, argv, argc));
+		}
+		if (strcmp(argv[arg_index], "-database_filepath") == 0){
+			absolute_file_path = get_next_arg(arg_index, argv, argc);
+		}
+		if (strcmp(argv[arg_index], "-colour_map_filepath") == 0){
+			colour_file_path = get_next_arg(arg_index, argv, argc);
+		}
+		if (strcmp(argv[arg_index], "-packet_listen_port") == 0){
+			packet_listener_port_no = atoi(get_next_arg(arg_index, argv, argc));
+		}
+    }
+
+	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL or
+			absolute_file_path == NULL or packet_listener_port_no == -1) {
+		printf("Usage is \n "
+				"-hand_shake_listen_port "
+				"<port which the visualiser will listen to for database hand shaking> \n"
+		        " -database_filepath "
+		        "<aboluste file path to where the database is located>\n"
+			    " -colour_map_filepath "
+			    "<aboluste file path to where the colour is located>\n"
+				" -packet_listen_port "
+				"<port which the visualiser will listen for packets>\n"
+			    " -");
+		printf("Example code would be \n\n "
+				"./vis  -hand_shake_listen_port 19999 -host localhost "
+				"-database_filepath /home/S06/stokesa6/spinniker/tool_cha_report"
+				"s/application_data/latest/visualiser_database.db -colour_map_"
+				"filepath /home/S06/stokesa6/spinniker/c_visualisers/c_vis_"
+				"database/test_data/synfire_colors -hand_shake_send_port "
+				"19998 -packet_listen_port 17895");
+		return 1;
+	}
+
+	map<int, char*> y_axis_labels;
+	map<int, int> key_to_neuronid_map;
+	map<int, struct colour> neuron_id_to_colour_map;
+	// initilise the visulaiser config
+	DatabaseMessageConnection hand_shaker(hand_shake_listen_port_no);
+	eieio_message message;
+	printf("awaiting tool chain hand shake to say database is ready \n");
+	message = hand_shaker.recieve_notification();
+	printf("received tool chain hand shake to say database is ready \n");
+	DatabaseReader reader(absolute_file_path);
+	printf("reading in labels \n");
+	y_axis_labels = reader.read_database_for_labels();
+	printf("reading in keys \n");
+	key_to_neuronid_map = reader.read_database_for_keys();
+	printf("reading in colour maps\n");
+	neuron_id_to_colour_map = reader.read_color_map(colour_file_path);
+	printf("closing database connection \n");
+	reader.close_database_connection();
+	// create and send the eieio command message confirming database read
+	printf("send confirmation database connection \n");
+	hand_shaker.send_ready_notification();
+	hand_shaker.close_connection();
+	printf("close connection \n");
+	// set up visualiser packet listener
+	fprintf(stderr, "Starting\n");
+	SocketQueuer queuer(packet_listener_port_no);
+	queuer.start();
+    //create visualiser
+    RasterPlot plotter(argc, argv, &queuer, y_axis_labels, key_to_neuronid_map);
+	return 0;
+}
