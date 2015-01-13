@@ -70,7 +70,7 @@ int main(int argc, char **argv){
 			    " -colour_map "
 			    "<aboluste file path to where the colour is located>\n"
 				" -port "
-				"<port which the visualiser will listen for packets>\n"
+				"<port which the visualiser will listen for packets>\n");
 		return 1;
 	}
 
