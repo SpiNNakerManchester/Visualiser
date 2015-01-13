@@ -16,27 +16,43 @@
 #include <time.h>
 #include "RasterPlot.h"
 #include "PacketConverter.h"
+//#include "../utilities/SocketQueuer.h"
+#include "../utilities/colour.h"
+#include "../glut_framework/GlutFramework.h"
 
+using namespace glutFramework;
 using namespace std;
-RasterPlot *instance = NULL;
 
-RasterPlot::RasterPlot(int argc, char **argv) {
-	if (pthread_mutex_init(&this->point_mutex, NULL) == -1) {
-        fprintf(stderr, "Error initializing mutex!\n");
-        exit(-1);
-    }
-	instance = this;
-}
+// global variable as registered methods cannot access class variables
+int window = 0;
+int plotTime = 1000;
+float timeStep = 0.1;
+int plotNeurons = 8000;
+int windowWidth = 800;
+int windowHeight = 600;
+int windowBorder = 110;
 
-void RasterPlot::start(SocketQueuer *queuer,
-                       std::map<int, char*> *y_axis_labels,
-                       std::map<int, int> *key_to_neuron_id_map) {
-    this->y_axis_labels = y_axis_labels;
+map<int, struct colour> neuron_id_to_colour_map;
+deque<pair<int, int> > points_to_draw;
+bool do_update = false;
+pthread_mutex_t point_mutex;
+map<int, int> key_to_neuronid_map;
+map<int, char*> y_axis_labels;
 
-    PacketConverter translater(queuer, &this->points_to_draw,
-                               &this->point_mutex,
-                               key_to_neuron_id_map);
-    translater.start();
+RasterPlot::RasterPlot(int argc, char **argv, SocketQueuer *queuer,
+		               map<int, char*> inputted_y_axis_labels,
+		               map<int, int> inputted_key_to_neuronid_map) {
+
+	key_to_neuronid_map = inputted_key_to_neuronid_map;
+	y_axis_labels = inputted_y_axis_labels;
+	if (pthread_mutex_init(&point_mutex, NULL) == -1) {
+		        fprintf(stderr, "Error initializing mutex!\n");
+		        exit(-1);
+		    }
+	PacketConverter translater(queuer, &points_to_draw, &point_mutex,
+			                   &key_to_neuronid_map);
+	translater.start();
+	startFramework(argc, argv);
 }
 
 //-------------------------------------------------------------------------
@@ -91,6 +107,8 @@ void RasterPlot::printglstroke(float x, float y, float size, float rotate,
     glPopMatrix();
 }
 
+
+
 void RasterPlot::display(float time) {
 
     glPointSize(1.0);
@@ -115,13 +133,11 @@ void RasterPlot::display(float time) {
     printglstroke(windowWidth - windowBorder - 20, windowBorder - 20, 0.10, 0,
             label_max, plotTime);
 
-    if (y_axis_labels != NULL) {
-        for (map<int, char*>::iterator iter = y_axis_labels->begin();
-                iter != y_axis_labels->end(); ++iter) {
-            float y_value = ((iter->first * y_spacing) + windowBorder) - 10;
-            char y_label[] = "%s";
-            printglstroke(60, y_value, 0.10, 0, y_label, iter->second);
-        }
+    for (map<int, char*>::iterator iter = y_axis_labels.begin();
+            iter != y_axis_labels.end(); ++iter) {
+        float y_value = ((iter->first * y_spacing) + windowBorder) - 10;
+        char y_label[] = "%s";
+        printglstroke(60, y_value, 0.10, 0, y_label, iter->second);
     }
 
     glColor4f(0.0, 0.0, 0.0, 1.0);
@@ -159,19 +175,21 @@ void RasterPlot::display(float time) {
 }
 
 void RasterPlot::reshape(int width, int height) {
-    fprintf(stderr, "Reshape to %d, %d\n", width, height);
-    windowWidth = width;
-    windowHeight = height;
+    if (glutGetWindow() == this->window) {
+        fprintf(stderr, "Reshape to %d, %d\n", width, height);
+        windowWidth = width;
+        windowHeight = height;
 
-    //printf("Wid: %d, Hei: %d.\n",width,height);
-    glViewport(0, 0, (GLsizei) width, (GLsizei) height); // viewport dimensions
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    // an orthographic projection. Should probably look into OpenGL
-    //perspective projections for 3D if that's your thing
-    glOrtho(0.0, width, 0.0, height, -50.0, 50.0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+        //printf("Wid: %d, Hei: %d.\n",width,height);
+        glViewport(0, 0, (GLsizei) width, (GLsizei) height); // viewport dimensions
+        glMatrixMode (GL_PROJECTION);
+        glLoadIdentity();
+        // an orthographic projection. Should probably look into OpenGL
+        //perspective projections for 3D if that's your thing
+        glOrtho(0.0, width, 0.0, height, -50.0, 50.0);
+        glMatrixMode (GL_MODELVIEW);
+        glLoadIdentity();
+    }
 }
 
 void RasterPlot::safelyshut(void) {

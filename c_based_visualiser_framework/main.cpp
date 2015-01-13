@@ -71,7 +71,6 @@ int main(int argc, char **argv){
 			    "<aboluste file path to where the colour is located>\n"
 				" -port "
 				"<port which the visualiser will listen for packets>\n"
-			    " -");
 		return 1;
 	}
 
@@ -103,7 +102,6 @@ int main(int argc, char **argv){
 	SocketQueuer queuer(packet_listener_port_no);
 	queuer.start();
     //create visualiser
-    RasterPlot plotter(argc, argv);
-	plotter.start(&queuer, &y_axis_labels, &key_to_neuronid_map);
+    RasterPlot plotter(argc, argv, &queuer, y_axis_labels, key_to_neuronid_map);
 	return 0;
 }

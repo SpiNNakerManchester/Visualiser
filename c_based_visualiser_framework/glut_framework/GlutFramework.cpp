@@ -50,9 +50,9 @@ namespace glutFramework {
 		// Initialize GLUT
 		glutInit(&argc, argv);
 		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-		glutInitWindowPosition(0, 100);
 		glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-		glutCreateWindow(title.c_str());
+		glutInitWindowPosition(0, 100);
+		this->window = glutCreateWindow(title.c_str());
 
 		// Function callbacks with wrapper functions
 		glutReshapeFunc(reshapeWrapper);
