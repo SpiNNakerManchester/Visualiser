@@ -9,3 +9,6 @@
 /build
 /dist
 /Visualiser.egg-info
+*.o
+*.exe
+vis
