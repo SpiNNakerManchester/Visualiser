@@ -1,13 +1,22 @@
+OBJECTS = utilities/DatabaseReader.o \
+          utilities/DatabaseMessageConnection.o \
+          utilities/SocketQueuer.o \
+          utilities/Threadable.o \
+          raster_view/RasterPlot.o \
+          raster_view/PacketConverter.o \
+          glut_framework/GlutFramework.o \
+          glut_framework/PerformanceTimer.o \
+          glut_framework/Keyboard.o \
+          main.o
+   
+OBJS=$(OBJECTS:%=build/%)
 
-all:
-	g++ -c main.cpp
-	g++ -c glut_framework/GlutFramework.cpp
-	g++ -c utilities/DatabaseReader.cpp
-	g++ -c raster_view/RasterPlot.cpp
-	g++ -c raster_view/PacketConverter.cpp
-	g++ -c utilities/SocketQueuer.cpp
-	g++ -c utilities/Threadable.cpp
-	g++ -c utilities/DatabaseMessageConnection.cpp
-	g++ -c glut_framework/PerformanceTimer.cpp
-	g++ -c glut_framework/Keyboard.cpp
-	g++ -o vis main.o DatabaseReader.o RasterPlot.o PacketConverter.o DatabaseMessageConnection.o SocketQueuer.o Threadable.o GlutFramework.o PerformanceTimer.o Keyboard.o -lGL -lGLU -lglut -lpthread -lsqlite3
+vis: $(OBJS)
+	g++ -o $@ $^ -lGL -lGLU -lglut -lpthread -lsqlite3
+
+build/%.o: %.cpp
+	-mkdir -p $(dir $@)
+	g++ -o $@ -c $<
+
+clean:
+	rm -rf build vis

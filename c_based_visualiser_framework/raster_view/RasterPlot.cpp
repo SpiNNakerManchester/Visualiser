@@ -7,8 +7,6 @@
 
 #include <GL/glut.h>
 #include <GL/freeglut.h>
-#include <map>
-#include <deque>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,36 +21,35 @@
 using namespace glutFramework;
 using namespace std;
 
-// global variable as registered methods cannot access class variables
-int window = 0;
-int plotTime = 1000;
-float timeStep = 0.1;
-int plotNeurons = 8000;
-int windowWidth = 800;
-int windowHeight = 600;
-int windowBorder = 110;
-
-map<int, struct colour> neuron_id_to_colour_map;
-deque<pair<int, int> > points_to_draw;
-bool do_update = false;
-pthread_mutex_t point_mutex;
-map<int, int> key_to_neuronid_map;
-map<int, char*> y_axis_labels;
-
 RasterPlot::RasterPlot(int argc, char **argv, SocketQueuer *queuer,
-		               map<int, char*> inputted_y_axis_labels,
-		               map<int, int> inputted_key_to_neuronid_map) {
+		               map<int, char*> *y_axis_labels,
+		               map<int, int> *key_to_neuronid_map,
+		               int plot_time_ms, float timestep_ms) {
+    this->window_width = INIT_WINDOW_WIDTH;
+    this->window_height = INIT_WINDOW_HEIGHT;
 
-	key_to_neuronid_map = inputted_key_to_neuronid_map;
-	y_axis_labels = inputted_y_axis_labels;
-	if (pthread_mutex_init(&point_mutex, NULL) == -1) {
-		        fprintf(stderr, "Error initializing mutex!\n");
-		        exit(-1);
-		    }
-	PacketConverter translater(queuer, &points_to_draw, &point_mutex,
-			                   &key_to_neuronid_map);
+    this->y_axis_labels = y_axis_labels;
+	this->key_to_neuronid_map = key_to_neuronid_map;
+	this->plot_time_ms = plot_time_ms;
+	this->timestep_ms = timestep_ms;
+	this->n_neurons = key_to_neuronid_map->size();
+
+	if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
+        fprintf(stderr, "Error initializing mutex!\n");
+        exit(-1);
+    }
+	PacketConverter translater(queuer, &(this->points_to_draw),
+	                           &(this->point_mutex),
+			                   this->key_to_neuronid_map);
 	translater.start();
-	startFramework(argc, argv);
+	startFramework(argc, argv, "Raster Plot", window_width, window_height,
+	               INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
+}
+
+void RasterPlot::init() {
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glColor3f(1.0, 1.0, 1.0);
+    glShadeModel(GL_SMOOTH);
 }
 
 //-------------------------------------------------------------------------
@@ -107,78 +104,76 @@ void RasterPlot::printglstroke(float x, float y, float size, float rotate,
     glPopMatrix();
 }
 
-
-
 void RasterPlot::display(float time) {
+    if (glutGetWindow() == this->window) {
+        glPointSize(1.0);
+        float x_spacing = (float) (window_width - (2 * WINDOW_BORDER))
+                / ((float) plot_time_ms / timestep_ms);
+        float y_spacing = (float) (window_width - (2 * WINDOW_BORDER))
+                / (float) n_neurons;
 
-    glPointSize(1.0);
-    float x_spacing = (float) (windowWidth - (2 * windowBorder))
-            / ((float) plotTime / timeStep);
-    float y_spacing = (float) (windowHeight - (2 * windowBorder))
-            / (float) plotNeurons;
+        glClearColor(1.0, 1.0, 1.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glColor4f(0.0, 0.0, 0.0, 1.0);
 
-    glClearColor(1.0, 1.0, 1.0, 1.0);
-    glClear (GL_COLOR_BUFFER_BIT);
-    glColor4f(0.0, 0.0, 0.0, 1.0);                      // Black Text for Labels
+        char title[] = "Raster Plot";
+        printgl((window_width / 2) - 75, window_height - 50,
+                GLUT_BITMAP_TIMES_ROMAN_24, title);
 
-    char title[] = "Raster Plot";
-    printgl((windowWidth / 2) - 75, windowHeight - 50,
-            GLUT_BITMAP_TIMES_ROMAN_24, title);
+        char x_axis[] = "Simulation Time (ms)";
+        printglstroke((window_width / 2) - 100, 20, 0.12, 0, x_axis);
+        char label_0[] = "0";
+        printglstroke(WINDOW_BORDER - 15, WINDOW_BORDER - 20, 0.10, 0, label_0);
+        char label_max[] = "%d";
+        printglstroke(window_width - WINDOW_BORDER - 20, WINDOW_BORDER - 20,
+                0.10, 0, label_max, plot_time_ms);
 
-    char x_axis[] = "Simulation Time (ms)";
-    printglstroke((windowWidth / 2) - 100, 20, 0.12, 0, x_axis);
-    char label_0[] = "0";
-    printglstroke(windowBorder - 15, windowBorder - 20, 0.10, 0, label_0);
-    char label_max[] = "%d";
-    printglstroke(windowWidth - windowBorder - 20, windowBorder - 20, 0.10, 0,
-            label_max, plotTime);
-
-    for (map<int, char*>::iterator iter = y_axis_labels.begin();
-            iter != y_axis_labels.end(); ++iter) {
-        float y_value = ((iter->first * y_spacing) + windowBorder) - 10;
-        char y_label[] = "%s";
-        printglstroke(60, y_value, 0.10, 0, y_label, iter->second);
-    }
-
-    glColor4f(0.0, 0.0, 0.0, 1.0);
-    glLineWidth(1.0);
-    glBegin (GL_LINES);
-    glVertex2f(windowWidth - windowBorder, windowBorder); // rhs
-    glVertex2f(windowBorder - 10, windowBorder); // inside
-    glEnd();
-    glBegin(GL_LINES);
-    glVertex2f(windowBorder - 10, windowBorder);
-    glVertex2f(windowBorder - 10, windowHeight - windowBorder);
-    glEnd();
-
-    glPointSize(2.0);
-    glBegin(GL_POINTS);
-    for (deque<pair<int, int> >::iterator iter =
-            points_to_draw.begin(); iter != points_to_draw.end(); ++iter) {
-        struct colour colour = neuron_id_to_colour_map[iter->second];
-        if (neuron_id_to_colour_map.find(iter->second)
-                == neuron_id_to_colour_map.end()) {
-            fprintf(stderr, "Missing colour for neuron %d\n", iter->second);
-            continue;
+        for (map<int, char*>::iterator iter = y_axis_labels->begin();
+                iter != y_axis_labels->end(); ++iter) {
+            float y_value = ((iter->first * y_spacing) + WINDOW_BORDER) - 10;
+            char y_label[] = "%s";
+            printglstroke(60, y_value, 0.10, 0, y_label, iter->second);
         }
 
-        glColor4f(colour.r, colour.g, colour.b, 1.0);
-        float x_value = (iter->first * x_spacing) + windowBorder;
-        float y_value = (iter->second * y_spacing) + windowBorder;
+        glColor4f(0.0, 0.0, 0.0, 1.0);
+        glLineWidth(1.0);
+        glBegin (GL_LINES);
+        glVertex2f(window_width - WINDOW_BORDER, WINDOW_BORDER);
+        glVertex2f(WINDOW_BORDER - 10, WINDOW_BORDER);
+        glEnd();
+        glBegin(GL_LINES);
+        glVertex2f(WINDOW_BORDER - 10, WINDOW_BORDER);
+        glVertex2f(WINDOW_BORDER - 10, window_height - WINDOW_BORDER);
+        glEnd();
 
-        glVertex2f(x_value, y_value);
+        glPointSize(2.0);
+        glBegin(GL_POINTS);
+        for (deque<pair<int, int> >::iterator iter =
+                points_to_draw.begin(); iter != points_to_draw.end(); ++iter) {
+            struct colour colour = (*neuron_id_to_colour_map)[iter->second];
+            if (neuron_id_to_colour_map->find(iter->second)
+                    == neuron_id_to_colour_map->end()) {
+                fprintf(stderr, "Missing colour for neuron %d\n", iter->second);
+                continue;
+            }
+
+            glColor4f(colour.r, colour.g, colour.b, 1.0);
+            float x_value = (iter->first * x_spacing) + WINDOW_BORDER;
+            float y_value = (iter->second * y_spacing) + WINDOW_BORDER;
+
+            glVertex2f(x_value, y_value);
+        }
+        glEnd();
+
+        glutSwapBuffers();
     }
-    do_update = false;
-    glEnd();
-
-    glutSwapBuffers();
 }
 
 void RasterPlot::reshape(int width, int height) {
     if (glutGetWindow() == this->window) {
         fprintf(stderr, "Reshape to %d, %d\n", width, height);
-        windowWidth = width;
-        windowHeight = height;
+        this->window_width = width;
+        this->window_height = height;
 
         //printf("Wid: %d, Hei: %d.\n",width,height);
         glViewport(0, 0, (GLsizei) width, (GLsizei) height); // viewport dimensions

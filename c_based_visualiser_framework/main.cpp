@@ -43,6 +43,8 @@ int main(int argc, char **argv){
     int packet_listener_port_no = -1;
     char* absolute_file_path = NULL;
     char* colour_file_path = NULL;
+    int plot_time_ms = -1;
+    float timestep_ms = -1.0;
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
 
@@ -58,10 +60,17 @@ int main(int argc, char **argv){
 		if (strcmp(argv[arg_index], "-port") == 0){
 			packet_listener_port_no = atoi(get_next_arg(arg_index, argv, argc));
 		}
+		if (strcmp(argv[arg_index], "-plot_time") == 0){
+            plot_time_ms = atoi(get_next_arg(arg_index, argv, argc));
+        }
+		if (strcmp(argv[arg_index], "-timestep") == 0){
+            timestep_ms = atof(get_next_arg(arg_index, argv, argc));
+        }
     }
 
-	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL or
-			absolute_file_path == NULL or packet_listener_port_no == -1) {
+	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL
+			or absolute_file_path == NULL or packet_listener_port_no == -1
+			or plot_time_ms == -1 or timestep_ms == -1.0) {
 		printf("Usage is \n "
 				"-hand_shake_port "
 				"<port which the visualiser will listen to for database hand shaking> \n"
@@ -70,7 +79,11 @@ int main(int argc, char **argv){
 			    " -colour_map "
 			    "<aboluste file path to where the colour is located>\n"
 				" -port "
-				"<port which the visualiser will listen for packets>\n");
+				"<port which the visualiser will listen for packets>\n"
+		        " -plot_time "
+		        "<duration of the simulation is milliseconds>\n"
+		        " -timestep "
+		        "<simulation timestep, in milliseconds\n");
 		return 1;
 	}
 
@@ -102,6 +115,7 @@ int main(int argc, char **argv){
 	SocketQueuer queuer(packet_listener_port_no);
 	queuer.start();
     //create visualiser
-    RasterPlot plotter(argc, argv, &queuer, y_axis_labels, key_to_neuronid_map);
+    RasterPlot plotter(argc, argv, &queuer, &y_axis_labels,
+            &key_to_neuronid_map, plot_time_ms, timestep_ms);
 	return 0;
 }

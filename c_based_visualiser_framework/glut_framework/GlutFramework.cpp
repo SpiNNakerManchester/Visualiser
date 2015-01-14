@@ -26,55 +26,47 @@
 
 namespace glutFramework {
 
-	// Set constants
-	const double GlutFramework::FRAME_TIME = 1.0 / GlutFramework::FPS * 1000.0; // Milliseconds
-
-
 	GlutFramework *GlutFramework::instance = NULL;
 
 	GlutFramework::GlutFramework() {
 		elapsedTimeInSeconds = 0;
 		frameTimeElapsed = 0;
-		title = "";
-		eyeVector = Vector<float>(0.0, 0.0, -10.0); // move the eye position back
-		position = 0.0f;
-		direction = 1.0 / FRAME_TIME;
 	}
 
 	GlutFramework::~GlutFramework() {
 	}
 
-	void GlutFramework::startFramework(int argc, char *argv[]) {
-		setInstance();	// Sets the instance to self, used in the callback wrapper functions
+	void GlutFramework::startFramework(
+	        int argc, char *argv[], std::string title, int width, int height,
+	        int posx, int posy, double fps) {
+
+	    // Sets the instance to this, used in the callback wrapper functions
+		setInstance();
+		this->frameTime = 1.0 / fps * 1000.0;
 
 		// Initialize GLUT
 		glutInit(&argc, argv);
 		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-		glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+		glutInitWindowSize(width, height);
 		glutInitWindowPosition(0, 100);
 		this->window = glutCreateWindow(title.c_str());
 
+        init();                     // Initialize
+
 		// Function callbacks with wrapper functions
+        glutDisplayFunc(displayWrapper);
 		glutReshapeFunc(reshapeWrapper);
+        glutIdleFunc(runWrapper);
 		glutMouseFunc(mouseButtonPressWrapper);
 		glutMotionFunc(mouseMoveWrapper);
-		glutDisplayFunc(displayWrapper);
 		glutKeyboardFunc(keyboardDownWrapper);
 		glutKeyboardUpFunc(keyboardUpWrapper);
 		glutSpecialFunc(specialKeyboardDownWrapper);
 		glutSpecialUpFunc(specialKeyboardUpWrapper);
-
-		init();						// Initialize
-		glutIdleFunc(runWrapper); 	// The program run loop
-		glutMainLoop();				// Start the main GLUT thread
-	}
-
-	void GlutFramework::load() {
-		// Subclass and override this method
+		glutMainLoop();
 	}
 
 	void GlutFramework::display(float dTime) {
-		// Subclass and override this method
 	}
 
 	void GlutFramework::reshape(int width, int height) {
@@ -82,126 +74,63 @@ namespace glutFramework {
 	}
 
 	void GlutFramework::mouseButtonPress(int button, int state, int x, int y) {
-		printf("MouseButtonPress: x: %d y: %d\n", x, y);
 	}
 
 	void GlutFramework::mouseMove(int x, int y) {
-		printf("MouseMove: x: %d y: %d\n", x, y);
 	}
 
-	void GlutFramework::keyboardDown( unsigned char key, int x, int y )
-	{
-		// Subclass and override this method
-		printf( "KeyboardDown: %c = %d\n", key, (int)key );
-		if (key==27) { //27 =- ESC key
-			exit (0);
-		}
-		keyStates.keyDown( (int)key );
+	void GlutFramework::keyboardDown( unsigned char key, int x, int y ) {
 	}
 
-	void GlutFramework::keyboardUp( unsigned char key, int x, int y )
-	{
-		// Subclass and override this method
-		printf( "KeyboardUp: %c \n", key );
-		keyStates.keyUp( (int)key );
+	void GlutFramework::keyboardUp( unsigned char key, int x, int y ) {
 	}
 
-	void GlutFramework::specialKeyboardDown( int key, int x, int y )
-	{
-		// Subclass and override this method
-		printf( "SpecialKeyboardDown: %d\n", key );
+	void GlutFramework::specialKeyboardDown( int key, int x, int y ) {
 	}
 
-	void GlutFramework::specialKeyboardUp( int key, int x, int y )
-	{
-		// Subclass and override this method
-		printf( "SpecialKeyboardUp: %d \n", key );
-	}
-
-	// ******************************
-	// ** Graphics helper routines **
-	// ******************************
-
-	// Initialize the projection/view matricies.
-	void GlutFramework::setDisplayMatricies() {
-	}
-
-	void GlutFramework::setupLights() {
-	}
-
-	void GlutFramework::setLookAt(float eyeX, float eyeY, float eyeZ,
-								  float centerX, float centerY, float centerZ, float upX, float upY, float upZ) {
-
-		eyeVector = Vector<float>(eyeX, eyeY, eyeZ);
-		centerVector = Vector<float>(centerX, centerY, centerZ);
-		upVector = Vector<float>(upX, upY, upZ);
-	}
-
-	Vector<float> GlutFramework::getEyeVector() const {
-		return eyeVector;
-	}
-
-	Vector<float> GlutFramework::getCenterVector() const {
-		return centerVector;
-	}
-
-	Vector<float> GlutFramework::getUpVector() const {
-		return upVector;
-	}
-
-	void GlutFramework::setTitle(std::string theTitle) {
-		title = theTitle;
+	void GlutFramework::specialKeyboardUp( int key, int x, int y ) {
 	}
 
 	// **************************
 	// ** GLUT Setup functions **
 	// **************************
 	void GlutFramework::init() {
-		glClearColor(0.0, 0.0, 0.0, 1.0);
-		glColor3f(1.0, 1.0, 1.0);
-		glShadeModel(GL_SMOOTH);
-		load();
 	}
 
 	void GlutFramework::setInstance() {
-		std::cout << "GlutFramework::setInstance()" << std::endl;
 		instance = this;
 	}
 
 	void GlutFramework::run() {
-		if(frameRateTimer.isStopped()) {	// The initial frame has the timer stopped, start it once
+		if(frameRateTimer.isStopped()) {
 			frameRateTimer.start();
 		}
 
-		frameRateTimer.stop();			// stop the timer and calculate time since last frame
+		// stop the timer and calculate time since last frame
+		frameRateTimer.stop();
 		double milliseconds = frameRateTimer.getElapsedMilliseconds();
 		frameTimeElapsed += milliseconds;
 
-		if( frameTimeElapsed >= FRAME_TIME ) {	// If the time exceeds a certain "frame rate" then show the next frame
+		if( frameTimeElapsed >= this->frameTime ) {
+
+		    // If the time exceeds a certain "frame rate" then show the next
+		    // frame
 			glutPostRedisplay();
-			frameTimeElapsed -= FRAME_TIME;		// remove a "frame" and start counting up again
+
+			// remove a "frame" and start counting up again
+			frameTimeElapsed -= this->frameTime;
 		}
-		frameRateTimer.start();			// start the timer
+		frameRateTimer.start();
 	}
 
 	void GlutFramework::displayFramework() {
-		if(displayTimer.isStopped()) {			// Start the timer on the initial frame
-			displayTimer.start();
-		}
-
-		glClearColor(0.0, 0.0, 0.0, 1.0);
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); // Clear once
-
-		displayTimer.stop();		// Stop the timer and get the elapsed time in seconds
-		elapsedTimeInSeconds = displayTimer.getElapsedSeconds(); // seconds
-
-		setupLights();
-		setDisplayMatricies();
-
-		display(elapsedTimeInSeconds);
-
-		glutSwapBuffers();
-		displayTimer.start();		// reset the timer to calculate the time for the next frame
+	    if (displayTimer.isStopped()) {
+            displayTimer.start();
+        }
+        displayTimer.stop();
+        elapsedTimeInSeconds = displayTimer.getElapsedSeconds();
+        display(elapsedTimeInSeconds);
+        displayTimer.start();
 	}
 
 	// ******************************************************************
@@ -209,7 +138,7 @@ namespace glutFramework {
 	// ******************************************************************
 
 	void GlutFramework::displayWrapper() {
-		instance->displayFramework();
+	    instance->displayFramework();
 	}
 
 	void GlutFramework::reshapeWrapper(int width, int height) {
@@ -220,7 +149,8 @@ namespace glutFramework {
 		instance->run();
 	}
 
-	void GlutFramework::mouseButtonPressWrapper(int button, int state, int x, int y) {
+	void GlutFramework::mouseButtonPressWrapper(int button, int state, int x,
+	                                            int y) {
 		instance->mouseButtonPress(button, state, x, y);
 	}
 

@@ -1,13 +1,22 @@
+OBJECTS = utilities/DatabaseReader.o \
+          utilities/DatabaseMessageConnection.o \
+          utilities/SocketQueuer.o \
+          utilities/Threadable.o \
+          raster_view/RasterPlot.o \
+          raster_view/PacketConverter.o \
+          glut_framework/GlutFramework.o \
+          glut_framework/PerformanceTimer.o \
+          glut_framework/Keyboard.o \
+          main.o
+   
+OBJS=$(OBJECTS:%=build/%)
 
-all:
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c main.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c glut_framework/GlutFramework.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/DatabaseReader.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c raster_view/RasterPlot.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c raster_view/PacketConverter.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/SocketQueuer.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/Threadable.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c utilities/DatabaseMessageConnection.cpp -fpermissive
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c glut_framework/PerformanceTimer.cpp
-	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -c glut_framework/Keyboard.cpp
-	g++ -o vis main.o DatabaseReader.o RasterPlot.o PacketConverter.o DatabaseMessageConnection.o SocketQueuer.o Threadable.o GlutFramework.o PerformanceTimer.o Keyboard.o -lfreeglut_static -lopengl32 -lwinmm -lgdi32 -lglu32 -lpthread -lws2_32 -lsqlite3
+vis.exe: $(OBJS)
+	g++ -o $@ $^ -lfreeglut_static -lopengl32 -lwinmm -lgdi32 -lglu32 -lpthread -lws2_32 -lsqlite3
+
+build/%.o: %.cpp
+	-mkdir -p $(dir $@)
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -fpermissive -o $@ -c $<
+
+clean:
+	rm -rf build vis.exe
