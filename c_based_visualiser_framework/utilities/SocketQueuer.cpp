@@ -13,12 +13,14 @@
 
 using namespace std;
 
-SocketQueuer::SocketQueuer(int listen_port) {
+SocketQueuer::SocketQueuer(int listen_port, char *hostname) {
 	this->addr_len_input = sizeof(this->si_other);
 	this->sdp_header_len = 26;
-	// TODO Auto-generated constructor stub
 	fprintf(stderr, "Socket Queuer Listening...\n");
 	init_sdp_listening(listen_port);
+	if (hostname != NULL) {
+	    send_void_message(hostname, 17893);
+	}
 	if (pthread_mutex_init(&this->spike_mutex, NULL) == -1) {
 	        fprintf(stderr, "Error initializing mutex!\n");
 	        exit(-1);
@@ -76,6 +78,27 @@ void SocketQueuer::init_sdp_listening(int listen_port) {
 
     freeaddrinfo(servinfo_input);
 }
+void SocketQueuer::send_void_message(char *hostname, int port) {
+    struct addrinfo hints;
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = 0;
+    hints.ai_flags = 0;
+    struct addrinfo* addr_info = 0;
+    if (getaddrinfo(hostname, NULL, &hints, &addr_info) != 0) {
+        fprintf(stderr, "Could not resolve hostname, exiting\n");
+        exit(-1);
+    }
+    ((struct sockaddr_in *) addr_info->ai_addr)->sin_port = htons(port);
+
+    char *content = "";
+    if (sendto(this->sockfd_input, content, sizeof(content), 0,
+        addr_info->ai_addr, addr_info->ai_addrlen) == -1) {
+        fprintf(stderr, "Could not send packet - %s\n", strerror(errno));
+        exit(-1);
+    }
+}
 
 void SocketQueuer::InternalThreadEntry(){
 	unsigned char buffer_input[1515];
@@ -117,7 +140,7 @@ void SocketQueuer::InternalThreadEntry(){
 			printf ("0x%.8x", new_message->data[position]);
 		}
 		printf ("}\n");
-	    }
+	}
 }
 
 eieio_message SocketQueuer::get_next_packet(){

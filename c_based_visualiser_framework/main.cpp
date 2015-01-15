@@ -45,6 +45,7 @@ int main(int argc, char **argv){
     char* colour_file_path = NULL;
     int plot_time_ms = -1;
     float timestep_ms = -1.0;
+    char *remote_host = NULL;
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
 
@@ -66,6 +67,9 @@ int main(int argc, char **argv){
 		if (strcmp(argv[arg_index], "-timestep") == 0){
             timestep_ms = atof(get_next_arg(arg_index, argv, argc));
         }
+		if (strcmp(argv[arg_index], "-remote_host") == 0) {
+		    remote_host = get_next_arg(arg_index, argv, argc);
+		}
     }
 
 	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL
@@ -75,15 +79,17 @@ int main(int argc, char **argv){
 				"-hand_shake_port "
 				"<port which the visualiser will listen to for database hand shaking> \n"
 		        " -database "
-		        "<aboluste file path to where the database is located>\n"
+		        "<file path to where the database is located>\n"
 			    " -colour_map "
-			    "<aboluste file path to where the colour is located>\n"
+			    "<file path to where the colour is located>\n"
 				" -port "
 				"<port which the visualiser will listen for packets>\n"
 		        " -plot_time "
 		        "<duration of the simulation is milliseconds>\n"
 		        " -timestep "
-		        "<simulation timestep, in milliseconds\n");
+		        "<simulation timestep, in milliseconds\n"
+		        " [-remote_host] "
+		        "<optional remote host, which will allow port triggering>\n");
 		return 1;
 	}
 
@@ -112,7 +118,7 @@ int main(int argc, char **argv){
 	printf("close connection \n");
 	// set up visualiser packet listener
 	fprintf(stderr, "Starting\n");
-	SocketQueuer queuer(packet_listener_port_no);
+	SocketQueuer queuer(packet_listener_port_no, remote_host);
 	queuer.start();
     //create visualiser
     RasterPlot plotter(argc, argv, &queuer, &y_axis_labels,

@@ -30,7 +30,7 @@ typedef int socklen_t;
 
 class SocketQueuer : public Threadable {
 public:
-	SocketQueuer(int);
+	SocketQueuer(int, char*);
 	virtual ~SocketQueuer();
 	eieio_message get_next_packet();
 	void free_packet(eieio_message);
@@ -39,6 +39,7 @@ protected:
 	void InternalThreadEntry();
 private:
 	void init_sdp_listening(int);
+	void send_void_message(char *, int);
 	std::deque<eieio_message> queue;
 	int sockfd_input;
 	struct sockaddr_in si_other; // for incoming frames
