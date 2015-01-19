@@ -92,10 +92,10 @@ void SocketQueuer::send_void_message(char *hostname, int port) {
     }
     ((struct sockaddr_in *) addr_info->ai_addr)->sin_port = htons(port);
 
-    char *content = "";
-    if (sendto(this->sockfd_input, content, sizeof(content), 0,
+    char data [1];
+    if (sendto(this->sockfd_input, data, 1, 0,
         addr_info->ai_addr, addr_info->ai_addrlen) == -1) {
-        fprintf(stderr, "Could not send packet - %s\n", strerror(errno));
+        fprintf(stderr, "Could not send packet \n");
         exit(-1);
     }
 }
