@@ -54,9 +54,9 @@ map<int, int> DatabaseReader::read_database_for_keys() {
 	if (sqlite3_prepare_v2(this->db, sql, -1,
 			               &compiled_statment, NULL) == SQLITE_OK){
 		while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-			int neuron_id = sqlite3_column_int(compiled_statment, 1);
-			int key = sqlite3_column_int(compiled_statment, 2);
-			int vertex_id = sqlite3_column_int(compiled_statment, 3);
+			int neuron_id = sqlite3_column_int(compiled_statment, 0);
+			int key = sqlite3_column_int(compiled_statment, 1);
+			int vertex_id = sqlite3_column_int(compiled_statment, 2);
 			fprintf(stderr, "Database key %i = %i\n", key, neuron_id + offset);
 			key_to_neuronid_map[key] = neuron_id + offset;
 			if (vertex_id != current_vertex_id){
@@ -88,8 +88,8 @@ map<int, char*> DatabaseReader::read_database_for_labels(){
 	if (sqlite3_prepare_v2(this->db, sql, -1,
 			               &compiled_statment, NULL) == SQLITE_OK){
 		 while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-			char* label = (char*)sqlite3_column_text(compiled_statment, 1);
-			int n_atoms = sqlite3_column_int(compiled_statment, 2);
+			char* label = (char*)sqlite3_column_text(compiled_statment, 0);
+			int n_atoms = sqlite3_column_int(compiled_statment, 1);
 			y_axis_labels[(n_atoms/2) + offset] = label;
 			offset += n_atoms;
 		 }
@@ -135,9 +135,9 @@ map<int, struct colour> DatabaseReader::read_color_map(char* colour_file_path){
 	if (sqlite3_prepare_v2(this->db, sql, -1,
 						   &compiled_statment, NULL) == SQLITE_OK){
 		 while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-			char* label = (char*)sqlite3_column_text(compiled_statment, 1);
+			char* label = (char*)sqlite3_column_text(compiled_statment, 0);
 			string key(label);
-			int n_atoms = sqlite3_column_int(compiled_statment, 2);
+			int n_atoms = sqlite3_column_int(compiled_statment, 1);
 			// convert to neuron id mapping
 			int nid =0;
 			for(nid=0; nid < n_atoms; nid++){
