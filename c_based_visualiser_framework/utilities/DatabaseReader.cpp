@@ -12,7 +12,6 @@
 #include <sqlite3.h>
 #include <stdio.h>
 #include <algorithm>
-#include <string>
 #include <stdlib.h>
 
 using namespace std;
@@ -173,6 +172,33 @@ map<int, struct colour> *DatabaseReader::read_color_map(char* colour_file_path){
 	//close query and return labels
 	sqlite3_finalize(compiled_statment);
 	return neuron_id_to_colour_map;
+}
+
+map<string, float> *DatabaseReader::get_configuration_parameters() {
+    string sqls = "SELECT parameter_id, value FROM configuration_parameters";
+    char* sql = &sqls[0];
+    map<string, float> *configuration_parameters = new map<string, float>();
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            char *parameter_id = (char*) sqlite3_column_text(
+                compiled_statment, 0);
+            char *parameter_id_copy = (char *) malloc(strlen(parameter_id));
+            strcpy(parameter_id_copy, parameter_id);
+            float value = sqlite3_column_double(compiled_statment, 1);
+            fprintf(stderr, "%s = %f\n", parameter_id_copy, value);
+            (*configuration_parameters)[string(parameter_id_copy)] = value;
+         }
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
+    //close query and return labels
+    sqlite3_finalize(compiled_statment);
+    return configuration_parameters;
 }
 
 void DatabaseReader::close_database_connection(){

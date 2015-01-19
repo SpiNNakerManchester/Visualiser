@@ -5,6 +5,7 @@
  *      Author: alan
  */
 #include <map>
+#include <string>
 #include <sqlite3.h>
 #include "colour.h"
 
@@ -19,6 +20,7 @@ public:
 	std::map<int, char*> *read_database_for_labels();
 	std::map<int, int> *read_database_for_keys();
 	std::map<int, struct colour> *read_color_map(char*);
+	std::map<std::string, float> *get_configuration_parameters();
 	void close_database_connection();
 private:
 	static int callback(void *, int, char **, char **);

@@ -43,8 +43,6 @@ int main(int argc, char **argv){
     int packet_listener_port_no = -1;
     char* absolute_file_path = NULL;
     char* colour_file_path = NULL;
-    int plot_time_ms = -1;
-    float timestep_ms = -1.0;
     char *remote_host = NULL;
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
@@ -61,20 +59,13 @@ int main(int argc, char **argv){
 		if (strcmp(argv[arg_index], "-port") == 0){
 			packet_listener_port_no = atoi(get_next_arg(arg_index, argv, argc));
 		}
-		if (strcmp(argv[arg_index], "-plot_time") == 0){
-            plot_time_ms = atoi(get_next_arg(arg_index, argv, argc));
-        }
-		if (strcmp(argv[arg_index], "-timestep") == 0){
-            timestep_ms = atof(get_next_arg(arg_index, argv, argc));
-        }
 		if (strcmp(argv[arg_index], "-remote_host") == 0) {
 		    remote_host = get_next_arg(arg_index, argv, argc);
 		}
     }
 
 	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL
-			or absolute_file_path == NULL or packet_listener_port_no == -1
-			or plot_time_ms == -1 or timestep_ms == -1.0) {
+			or absolute_file_path == NULL or packet_listener_port_no == -1) {
 		printf("Usage is \n "
 				"-hand_shake_port "
 				"<port which the visualiser will listen to for database hand shaking> \n"
@@ -84,10 +75,6 @@ int main(int argc, char **argv){
 			    "<file path to where the colour is located>\n"
 				" -port "
 				"<port which the visualiser will listen for packets>\n"
-		        " -plot_time "
-		        "<duration of the simulation is milliseconds>\n"
-		        " -timestep "
-		        "<simulation timestep, in milliseconds\n"
 		        " [-remote_host] "
 		        "<optional remote host, which will allow port triggering>\n");
 		return 1;
@@ -109,6 +96,9 @@ int main(int argc, char **argv){
 	key_to_neuronid_map = reader.read_database_for_keys();
 	printf("reading in colour maps\n");
 	neuron_id_to_colour_map = reader.read_color_map(colour_file_path);
+	printf("reading parameters\n");
+	std::map<std::string, float> *config_params =
+	        reader.get_configuration_parameters();
 	printf("closing database connection \n");
 	reader.close_database_connection();
 	// create and send the eieio command message confirming database read
@@ -123,6 +113,7 @@ int main(int argc, char **argv){
     //create visualiser
     RasterPlot plotter(argc, argv, &queuer, y_axis_labels,
                        key_to_neuronid_map, neuron_id_to_colour_map,
-                       plot_time_ms, timestep_ms);
+                       (*config_params)["runtime"],
+                       (*config_params)["machine_time_step"]);
 	return 0;
 }

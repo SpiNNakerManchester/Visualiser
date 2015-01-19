@@ -25,7 +25,7 @@ RasterPlot::RasterPlot(int argc, char **argv, SocketQueuer *queuer,
 		               map<int, char*> *y_axis_labels,
 		               map<int, int> *key_to_neuronid_map,
 		               map<int, struct colour> *neuron_id_to_colour_map,
-		               int plot_time_ms, float timestep_ms) {
+		               float plot_time_ms, float timestep_ms) {
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
 

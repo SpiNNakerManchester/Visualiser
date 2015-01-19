@@ -19,7 +19,7 @@ class RasterPlot : public GlutFramework {
 public:
 	RasterPlot(int , char **, SocketQueuer *, std::map<int, char*> *,
 	           std::map<int, int> *, std::map<int, struct colour> *,
-	           int, float);
+	           float, float);
 	void init();
 	void display(float);
 	void reshape(int, int);
@@ -37,7 +37,7 @@ private:
 	const static int INIT_WINDOW_X = 100;
 	const static int INIT_WINDOW_Y = 100;
 
-	int plot_time_ms;
+	float plot_time_ms;
 	float timestep_ms;
 	int n_neurons;
 	int window_width;
