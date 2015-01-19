@@ -18,7 +18,8 @@ class RasterPlot : public GlutFramework {
 
 public:
 	RasterPlot(int , char **, SocketQueuer *, std::map<int, char*> *,
-	           std::map<int, int> *, int, float);
+	           std::map<int, int> *, std::map<int, struct colour> *,
+	           int, float);
 	void init();
 	void display(float);
 	void reshape(int, int);

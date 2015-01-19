@@ -93,14 +93,14 @@ int main(int argc, char **argv){
 		return 1;
 	}
 
-	std::map<int, char*> y_axis_labels;
-	std::map<int, int> key_to_neuronid_map;
-	std::map<int, struct colour> neuron_id_to_colour_map;
+	std::map<int, char*> *y_axis_labels;
+	std::map<int, int> *key_to_neuronid_map;
+	std::map<int, struct colour> *neuron_id_to_colour_map;
 	// initilise the visulaiser config
 	DatabaseMessageConnection hand_shaker(hand_shake_listen_port_no);
 	eieio_message message;
 	printf("awaiting tool chain hand shake to say database is ready \n");
-    //message = hand_shaker.recieve_notification();
+    message = hand_shaker.recieve_notification();
 	printf("received tool chain hand shake to say database is ready \n");
 	DatabaseReader reader(absolute_file_path);
 	printf("reading in labels \n");
@@ -121,7 +121,8 @@ int main(int argc, char **argv){
 	SocketQueuer queuer(packet_listener_port_no, remote_host);
 	queuer.start();
     //create visualiser
-    RasterPlot plotter(argc, argv, &queuer, &y_axis_labels,
-            &key_to_neuronid_map, plot_time_ms, timestep_ms);
+    RasterPlot plotter(argc, argv, &queuer, y_axis_labels,
+                       key_to_neuronid_map, neuron_id_to_colour_map,
+                       plot_time_ms, timestep_ms);
 	return 0;
 }

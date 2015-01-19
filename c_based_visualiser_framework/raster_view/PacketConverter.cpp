@@ -49,16 +49,16 @@ void PacketConverter::InternalThreadEntry(){
 void PacketConverter::translate_eieio_message_to_points(
 		eieio_message &message, list<pair<int, int> > &points){
 
-    fprintf(stderr, "eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
-            "count=%i data={", message.header.p,
-            message.header.f, message.header.d,
-            message.header.t, message.header.type,
-            message.header.tag, message.header.count);
-    for(int position = 0; position < ((message.header.count + 1) * 4);
-            position++){
-        printf (" 0x%.2x", (uint) message.data[position]);
-    }
-    printf (" }\n");
+    //fprintf(stderr, "eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
+    //        "count=%i data={", message.header.p,
+    //        message.header.f, message.header.d,
+    //        message.header.t, message.header.type,
+    //        message.header.tag, message.header.count);
+    //for(int position = 0; position < ((message.header.count + 1) * 4);
+    //        position++){
+    //    printf (" 0x%.2x", (uint) message.data[position]);
+    //}
+    //printf (" }\n");
 
 	//check that its a data message
 	if (message.header.f != 0 or message.header.p != 0 or message.header.d != 1
@@ -87,8 +87,8 @@ void PacketConverter::translate_eieio_message_to_points(
                 fprintf(stderr, "Missing neuron id for key %d\n", key);
                 continue;
             }
-			fprintf(stderr, "time = %i, key = %i, neuron_id = %i\n", time, key,
-			        neuron_id);
+			//fprintf(stderr, "time = %i, key = %i, neuron_id = %i\n", time, key,
+			//        neuron_id);
 			pair<int, int> point(time, neuron_id);
 			points.push_back(point);
 		}

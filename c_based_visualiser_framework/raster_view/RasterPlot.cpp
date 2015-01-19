@@ -24,15 +24,20 @@ using namespace std;
 RasterPlot::RasterPlot(int argc, char **argv, SocketQueuer *queuer,
 		               map<int, char*> *y_axis_labels,
 		               map<int, int> *key_to_neuronid_map,
+		               map<int, struct colour> *neuron_id_to_colour_map,
 		               int plot_time_ms, float timestep_ms) {
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
 
     this->y_axis_labels = y_axis_labels;
 	this->key_to_neuronid_map = key_to_neuronid_map;
+	this->neuron_id_to_colour_map = neuron_id_to_colour_map;
 	this->plot_time_ms = plot_time_ms;
 	this->timestep_ms = timestep_ms;
 	this->n_neurons = key_to_neuronid_map->size();
+
+	fprintf(stderr, "n_neurons = %i\n", this->n_neurons);
+
 
 	if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
         fprintf(stderr, "Error initializing mutex!\n");
@@ -109,7 +114,7 @@ void RasterPlot::display(float time) {
         glPointSize(1.0);
         float x_spacing = (float) (window_width - (2 * WINDOW_BORDER))
                 / ((float) plot_time_ms / timestep_ms);
-        float y_spacing = (float) (window_width - (2 * WINDOW_BORDER))
+        float y_spacing = (float) (window_height - (2 * WINDOW_BORDER))
                 / (float) n_neurons;
 
         glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -131,8 +136,11 @@ void RasterPlot::display(float time) {
         for (map<int, char*>::iterator iter = y_axis_labels->begin();
                 iter != y_axis_labels->end(); ++iter) {
             float y_value = ((iter->first * y_spacing) + WINDOW_BORDER) - 10;
+            float width = glutStrokeLength(GLUT_STROKE_ROMAN, iter->second)
+                    * 0.1;
             char y_label[] = "%s";
-            printglstroke(60, y_value, 0.10, 0, y_label, iter->second);
+            printglstroke((WINDOW_BORDER - width) - 20, y_value, 0.10, 0,
+                    iter->second);
         }
 
         glColor4f(0.0, 0.0, 0.0, 1.0);
@@ -148,14 +156,16 @@ void RasterPlot::display(float time) {
 
         glPointSize(2.0);
         glBegin(GL_POINTS);
+        pthread_mutex_lock(&(this->point_mutex));
         for (deque<pair<int, int> >::iterator iter =
                 points_to_draw.begin(); iter != points_to_draw.end(); ++iter) {
-            struct colour colour = (*neuron_id_to_colour_map)[iter->second];
+
             if (neuron_id_to_colour_map->find(iter->second)
                     == neuron_id_to_colour_map->end()) {
                 fprintf(stderr, "Missing colour for neuron %d\n", iter->second);
                 continue;
             }
+            struct colour colour = (*neuron_id_to_colour_map)[iter->second];
 
             glColor4f(colour.r, colour.g, colour.b, 1.0);
             float x_value = (iter->first * x_spacing) + WINDOW_BORDER;
@@ -163,6 +173,7 @@ void RasterPlot::display(float time) {
 
             glVertex2f(x_value, y_value);
         }
+        pthread_mutex_unlock(&(this->point_mutex));
         glEnd();
 
         glutSwapBuffers();
