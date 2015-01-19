@@ -39,13 +39,12 @@ DatabaseReader::DatabaseReader(char* given_path_to_database) {
     }
 }
 
-map<int, int> DatabaseReader::read_database_for_keys(){
-	//convert sql to char
+map<int, int> DatabaseReader::read_database_for_keys() {
 	string sqls =
-			"SELECT n.neuron_id, n.key n.vertex_id FROM key_to_neuron_mapping "
-			"as n AND Partitionable_vertices as p INNER JOIN n ON "
-			"p.vertex_id=n.vertex_id WHERE p.recorded == 1 "
-			"ORDER BY p.vertex_id, n.neuron_id";
+	    "SELECT n.neuron_id, n.key, n.vertex_id"
+	    " FROM key_to_neuron_mapping as n JOIN Partitionable_vertices as p"
+	    " ON p.vertex_id=n.vertex_id  WHERE p.recorded == 1"
+	    " ORDER BY p.vertex_id, n.neuron_id";
 	char* sql = &sqls[0];
 	map<int, int> key_to_neuronid_map;
 	sqlite3_stmt *compiled_statment;
@@ -57,14 +56,20 @@ map<int, int> DatabaseReader::read_database_for_keys(){
 		while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
 			int neuron_id = sqlite3_column_int(compiled_statment, 1);
 			int key = sqlite3_column_int(compiled_statment, 2);
-			int vertex_id = sqlite3_column_int(compiled_statment, 2);
-			key_to_neuronid_map[neuron_id + offset] = key;
+			int vertex_id = sqlite3_column_int(compiled_statment, 3);
+			fprintf(stderr, "Database key %i = %i\n", key, neuron_id + offset);
+			key_to_neuronid_map[key] = neuron_id + offset;
 			if (vertex_id != current_vertex_id){
 				offset = current_counter;
 				current_vertex_id = vertex_id;
 			}
 			current_counter ++;
 		 }
+	} else {
+	    fprintf(stderr, "Error reading database: %i: %s\n",
+	            sqlite3_errcode(this->db),
+	            sqlite3_errmsg(this->db));
+	    exit(-1);
 	}
 	//close query and return labels
 	sqlite3_finalize(compiled_statment);
@@ -74,7 +79,7 @@ map<int, int> DatabaseReader::read_database_for_keys(){
 map<int, char*> DatabaseReader::read_database_for_labels(){
 	// convert sql to char
 	string sqls = "SELECT vertex_label, no_atoms FROM Partitionable_vertices "
-			      "WHERE recorded == 1 SORTBY vertex_id";
+			      "WHERE recorded == 1 ORDER BY vertex_id";
 	int offset = 0;
 	char* sql = &sqls[0];
 	map<int, char*> y_axis_labels;
@@ -88,7 +93,12 @@ map<int, char*> DatabaseReader::read_database_for_labels(){
 			y_axis_labels[(n_atoms/2) + offset] = label;
 			offset += n_atoms;
 		 }
-	}
+	} else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
 	//close query and return labels
 	sqlite3_finalize(compiled_statment);
 	return y_axis_labels;

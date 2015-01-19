@@ -124,22 +124,13 @@ void SocketQueuer::InternalThreadEntry(){
 		new_message->header.t = ((buffer_input[1] >> 4) & 1);
 		new_message->header.type = ((buffer_input[1] >> 2) & 3);
 		new_message->header.tag = (buffer_input[1] & 3);
-		new_message->data = (char *) malloc(numbytes_input -2);
-		memcpy(new_message->data, &buffer_input[2], numbytes_input -2);
+		new_message->data = (unsigned char *) malloc(numbytes_input - 2);
+		memcpy(new_message->data, &buffer_input[2], numbytes_input - 2);
 		// load message into buffer
 		pthread_mutex_lock(&this->spike_mutex);
 		this->queue.push_back(*new_message);
 		pthread_cond_signal(&this->cond);
 		pthread_mutex_unlock(&this->spike_mutex);
-		printf ("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
-				"count=%i data={", new_message->header.p,
-				new_message->header.f, new_message->header.d,
-				new_message->header.t, new_message->header.type,
-				new_message->header.tag, new_message->header.count);
-		for(int position = 0; position < (new_message->header.count*4); position++){
-			printf ("0x%.8x", new_message->data[position]);
-		}
-		printf ("}\n");
 	}
 }
 
@@ -147,8 +138,8 @@ eieio_message SocketQueuer::get_next_packet(){
 	eieio_message packet;
 	pthread_mutex_lock(&this->spike_mutex);
 	while(this->queue.size() == 0) {
-	            pthread_cond_wait(&this->cond, &this->spike_mutex);
-	        }
+        pthread_cond_wait(&this->cond, &this->spike_mutex);
+    }
 	packet = this->queue.front();
 	this->queue.pop_front();
 	pthread_mutex_unlock(&this->spike_mutex);

@@ -48,38 +48,48 @@ void PacketConverter::InternalThreadEntry(){
 
 void PacketConverter::translate_eieio_message_to_points(
 		eieio_message &message, list<pair<int, int> > &points){
+
+    fprintf(stderr, "eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
+            "count=%i data={", message.header.p,
+            message.header.f, message.header.d,
+            message.header.t, message.header.type,
+            message.header.tag, message.header.count);
+    for(int position = 0; position < ((message.header.count + 1) * 4);
+            position++){
+        printf (" 0x%.2x", (uint) message.data[position]);
+    }
+    printf (" }\n");
+
 	//check that its a data message
 	if (message.header.f != 0 or message.header.p != 0 or message.header.d != 1
 		or message.header.t != 1 or message.header.type != 2){
 		printf("this packet was determined to be a "
 				"command packet. therefore not processing it.");
-		printf ("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i "
-						"count=%i data={", message.header.p,
-						message.header.f, message.header.d,
-						message.header.t, message.header.type,
-						message.header.tag, message.header.count);
-		for(int position = 0; position < strlen(message.data); position++){
-			printf ("%c", message.data[position]);
-		}
-		printf ("}\n");
+		printf("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i count=%i\n",
+		       message.header.p, message.header.f, message.header.d,
+			   message.header.t, message.header.type, message.header.tag,
+			   message.header.count);
 
 	} else {
-		int y_pos = (int(message.data[0]) << 24) +
-					(int(message.data[1]) << 16) +
-					(int(message.data[2]) << 8) +
-					(int(message.data[3]));
+		uint time = (message.data[3] << 24) |
+					(message.data[2] << 16) |
+					(message.data[1] << 8) |
+					(message.data[0]);
 
 		for (int position = 0; position < message.header.count; position++){
 			int data_position = (position * SIZE_OF_KEY) + 4;
-			int key;
-			key = (int(message.data[data_position]) << 24) +
-				  (int(message.data[data_position + 1]) << 16) +
-				  (int(message.data[data_position + 2]) << 8) +
-				  (int(message.data[data_position + 3]));
-			map<int, int> temp = *(this->neuron_id_mapping);
-			int x_pos = temp[key];
-			int time;
-			pair<int, int> point(x_pos, y_pos);
+			int key = (message.data[data_position + 3] << 24) |
+				      (message.data[data_position + 2] << 16) |
+			          (message.data[data_position + 1] << 8) |
+				      (message.data[data_position]);
+			int neuron_id = (*(this->neuron_id_mapping))[key];
+			if (neuron_id_mapping->find(key) == neuron_id_mapping->end()) {
+                fprintf(stderr, "Missing neuron id for key %d\n", key);
+                continue;
+            }
+			fprintf(stderr, "time = %i, key = %i, neuron_id = %i\n", time, key,
+			        neuron_id);
+			pair<int, int> point(time, neuron_id);
 			points.push_back(point);
 		}
 	}

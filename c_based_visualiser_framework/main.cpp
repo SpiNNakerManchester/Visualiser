@@ -100,7 +100,7 @@ int main(int argc, char **argv){
 	DatabaseMessageConnection hand_shaker(hand_shake_listen_port_no);
 	eieio_message message;
 	printf("awaiting tool chain hand shake to say database is ready \n");
-	message = hand_shaker.recieve_notification();
+    //message = hand_shaker.recieve_notification();
 	printf("received tool chain hand shake to say database is ready \n");
 	DatabaseReader reader(absolute_file_path);
 	printf("reading in labels \n");

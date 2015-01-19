@@ -13,7 +13,7 @@ struct eieio_header{
 
 struct eieio_message{
     eieio_header header;
-    char* data;
+    unsigned char* data;
 };
 
 struct eieio_command_header{
@@ -24,7 +24,7 @@ struct eieio_command_header{
 
 struct eieio_command_message{
     eieio_command_header header;
-    char* data;
+    unsigned char* data;
 };
 
 #endif /* EIEIOMESSAGE_H_ */
