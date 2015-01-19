@@ -37,6 +37,8 @@ RasterPlot::RasterPlot(int argc, char **argv, SocketQueuer *queuer,
 	this->n_neurons = key_to_neuronid_map->size();
 
 	fprintf(stderr, "n_neurons = %i\n", this->n_neurons);
+	fprintf(stderr, "plot time = %f\n", this->plot_time_ms);
+	fprintf(stderr, "timestep = %f\n", this->timestep_ms);
 
 
 	if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
@@ -129,7 +131,7 @@ void RasterPlot::display(float time) {
         printglstroke((window_width / 2) - 100, 20, 0.12, 0, x_axis);
         char label_0[] = "0";
         printglstroke(WINDOW_BORDER - 15, WINDOW_BORDER - 20, 0.10, 0, label_0);
-        char label_max[] = "%d";
+        char label_max[] = "%.1f";
         printglstroke(window_width - WINDOW_BORDER - 20, WINDOW_BORDER - 20,
                 0.10, 0, label_max, plot_time_ms);
 

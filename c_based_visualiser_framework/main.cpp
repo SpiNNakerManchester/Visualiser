@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include <map>
+#include <string>
 #include <deque>
 #include <string.h>
 #include "main.h"
@@ -64,11 +65,12 @@ int main(int argc, char **argv){
 		}
     }
 
-	if (hand_shake_listen_port_no == -1 or colour_file_path == NULL
+	if (colour_file_path == NULL
 			or absolute_file_path == NULL or packet_listener_port_no == -1) {
 		printf("Usage is \n "
-				"-hand_shake_port "
-				"<port which the visualiser will listen to for database hand shaking> \n"
+				"[-hand_shake_port]"
+				"<optional port which the visualiser will listen to for"
+		        " database hand shaking> \n"
 		        " -database "
 		        "<file path to where the database is located>\n"
 			    " -colour_map "
@@ -84,11 +86,15 @@ int main(int argc, char **argv){
 	std::map<int, int> *key_to_neuronid_map;
 	std::map<int, struct colour> *neuron_id_to_colour_map;
 	// initilise the visulaiser config
-	DatabaseMessageConnection hand_shaker(hand_shake_listen_port_no);
-	eieio_message message;
-	printf("awaiting tool chain hand shake to say database is ready \n");
-    message = hand_shaker.recieve_notification();
-	printf("received tool chain hand shake to say database is ready \n");
+
+	DatabaseMessageConnection *hand_shaker = NULL;
+	if (hand_shake_listen_port_no != -1) {
+        hand_shaker = new DatabaseMessageConnection(hand_shake_listen_port_no);
+        printf("awaiting tool chain hand shake to say database is ready \n");
+        hand_shaker->recieve_notification();
+        printf("received tool chain hand shake to say database is ready \n");
+	}
+
 	DatabaseReader reader(absolute_file_path);
 	printf("reading in labels \n");
 	y_axis_labels = reader.read_database_for_labels();
@@ -101,19 +107,26 @@ int main(int argc, char **argv){
 	        reader.get_configuration_parameters();
 	printf("closing database connection \n");
 	reader.close_database_connection();
-	// create and send the eieio command message confirming database read
-	printf("send confirmation database connection \n");
-	hand_shaker.send_ready_notification();
-	hand_shaker.close_connection();
-	printf("close connection \n");
+
+	if (hand_shaker != NULL) {
+
+        // create and send the eieio command message confirming database read
+        printf("send confirmation database connection \n");
+        hand_shaker->send_ready_notification();
+        hand_shaker->close_connection();
+        delete hand_shaker;
+        printf("close connection \n");
+	}
+
 	// set up visualiser packet listener
 	fprintf(stderr, "Starting\n");
 	SocketQueuer queuer(packet_listener_port_no, remote_host);
 	queuer.start();
+
     //create visualiser
     RasterPlot plotter(argc, argv, &queuer, y_axis_labels,
                        key_to_neuronid_map, neuron_id_to_colour_map,
                        (*config_params)["runtime"],
-                       (*config_params)["machine_time_step"]);
+                       (*config_params)["machine_time_step"] / 1000.0);
 	return 0;
 }

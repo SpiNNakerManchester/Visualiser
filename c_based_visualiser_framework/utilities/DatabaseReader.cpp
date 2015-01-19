@@ -188,7 +188,8 @@ map<string, float> *DatabaseReader::get_configuration_parameters() {
             strcpy(parameter_id_copy, parameter_id);
             float value = sqlite3_column_double(compiled_statment, 1);
             fprintf(stderr, "%s = %f\n", parameter_id_copy, value);
-            (*configuration_parameters)[string(parameter_id_copy)] = value;
+            string key(parameter_id_copy);
+            (*configuration_parameters)[key] = value;
          }
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
