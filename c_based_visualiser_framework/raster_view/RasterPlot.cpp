@@ -138,7 +138,10 @@ void RasterPlot::display(float time) {
         for (map<int, char*>::iterator iter = y_axis_labels->begin();
                 iter != y_axis_labels->end(); ++iter) {
             float y_value = ((iter->first * y_spacing) + WINDOW_BORDER) - 10;
-            float width = glutStrokeLength(GLUT_STROKE_ROMAN, iter->second)
+            float width =
+            		glutStrokeLength(GLUT_STROKE_ROMAN,
+            		                 reinterpret_cast<const unsigned char*>
+                                     (iter->second))
                     * 0.1;
             char y_label[] = "%s";
             printglstroke((WINDOW_BORDER - width) - 20, y_value, 0.10, 0,
