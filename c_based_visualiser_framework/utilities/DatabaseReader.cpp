@@ -24,10 +24,8 @@ struct database_data{
 };
 
 DatabaseReader::DatabaseReader(char* given_path_to_database) {
-    char* absolute_path_to_database;
-
-    absolute_path_to_database = given_path_to_database;
     int rc;
+    printf ("path inside reader (%s) \n", given_path_to_database);
     rc = sqlite3_open(given_path_to_database, &this->db);
     if(rc){
        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(this->db));

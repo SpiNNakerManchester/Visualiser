@@ -43,6 +43,7 @@ int main(int argc, char **argv){
     int hand_shake_listen_port_no = -1;
     int packet_listener_port_no = -1;
     char* absolute_file_path = NULL;
+    char* packet_file_path = NULL;
     char* colour_file_path = NULL;
     char *remote_host = NULL;
 
@@ -65,14 +66,14 @@ int main(int argc, char **argv){
 		}
     }
 
-	if (colour_file_path == NULL
-			or absolute_file_path == NULL or packet_listener_port_no == -1) {
+	if (colour_file_path == NULL or packet_listener_port_no == -1) {
 		printf("Usage is \n "
 				"[-hand_shake_port]"
 				"<optional port which the visualiser will listen to for"
 		        " database hand shaking> \n"
 		        " -database "
-		        "<file path to where the database is located>\n"
+		        "<file path to where the database is located, if needed for"
+		         "manual configuration>\n"
 			    " -colour_map "
 			    "<file path to where the colour is located>\n"
 				" -port "
@@ -91,22 +92,42 @@ int main(int argc, char **argv){
 	if (hand_shake_listen_port_no != -1) {
         hand_shaker = new DatabaseMessageConnection(hand_shake_listen_port_no);
         printf("awaiting tool chain hand shake to say database is ready \n");
-        hand_shaker->recieve_notification();
+        packet_file_path = hand_shaker->recieve_notification();
         printf("received tool chain hand shake to say database is ready \n");
 	}
+	else{
+	    if (!absolute_file_path){
+	        printf("no hand shaking occured and you give us a path"
+	               "to the database. Please rectify one of these and try"
+	               "again \n");
+	        return 0;
+	    }
+	}
 
-	DatabaseReader reader(absolute_file_path);
+	printf("path : (%s) \n", packet_file_path);
+
+    DatabaseReader* reader = NULL;
+    if (!absolute_file_path){
+        printf("using packet based address \n");
+        reader = new DatabaseReader(packet_file_path);
+    }
+    else{
+        printf("using command based address \n");
+        reader = new DatabaseReader(absolute_file_path);
+    }
+
 	printf("reading in labels \n");
-	y_axis_labels = reader.read_database_for_labels();
+	y_axis_labels = reader->read_database_for_labels();
 	printf("reading in keys \n");
-	key_to_neuronid_map = reader.read_database_for_keys();
+	key_to_neuronid_map = reader->read_database_for_keys();
 	printf("reading in colour maps\n");
-	neuron_id_to_colour_map = reader.read_color_map(colour_file_path);
+	neuron_id_to_colour_map = reader->read_color_map(colour_file_path);
 	printf("reading parameters\n");
 	std::map<std::string, float> *config_params =
-	        reader.get_configuration_parameters();
+	        reader->get_configuration_parameters();
 	printf("closing database connection \n");
-	reader.close_database_connection();
+	reader->close_database_connection();
+	delete reader;
 
 	if (hand_shaker != NULL) {
 
