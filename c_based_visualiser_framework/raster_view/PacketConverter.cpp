@@ -63,8 +63,9 @@ void PacketConverter::translate_eieio_message_to_points(
 	//check that its a data message
 	if (message.header.f != 0 or message.header.p != 0 or message.header.d != 1
 		or message.header.t != 1 or message.header.type != 2){
-		printf("this packet was determined to be a "
-				"command packet. therefore not processing it.");
+		printf("this packet was determined to not be a "
+				"data packet with a fixed payload as a time stamp and then keys.
+				 "therefore not processing it.");
 		printf("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i count=%i\n",
 		       message.header.p, message.header.f, message.header.d,
 			   message.header.t, message.header.type, message.header.tag,
