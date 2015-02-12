@@ -70,15 +70,15 @@ int main(int argc, char **argv){
 		printf("Usage is \n "
 				"[-hand_shake_port]"
 				"<optional port which the visualiser will listen to for"
-		        " database hand shaking> \n"
-		        " -database "
-		        "<file path to where the database is located, if needed for"
-		         "manual configuration>\n"
-			    " -colour_map "
+		        " database hand shaking>\n"
+		        "[-database]"
+		        "<optional file path to where the database is located,"
+		        " if needed for manual configuration>\n"
+			    "-colour_map "
 			    "<file path to where the colour is located>\n"
-				" -port "
+				"-port "
 				"<port which the visualiser will listen for packets>\n"
-		        " [-remote_host] "
+		        "[-remote_host] "
 		        "<optional remote host, which will allow port triggering>\n");
 		return 1;
 	}
@@ -94,8 +94,7 @@ int main(int argc, char **argv){
         printf("awaiting tool chain hand shake to say database is ready \n");
         packet_file_path = hand_shaker->recieve_notification();
         printf("received tool chain hand shake to say database is ready \n");
-	}
-	else{
+	} else{
 	    if (!absolute_file_path){
 	        printf("no hand shaking occured and you give us a path"
 	               "to the database. Please rectify one of these and try"

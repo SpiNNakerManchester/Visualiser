@@ -27,10 +27,9 @@ DatabaseReader::DatabaseReader(char* given_path_to_database) {
     int rc;
     printf ("path inside reader (%s) \n", given_path_to_database);
     rc = sqlite3_open(given_path_to_database, &this->db);
-    if(rc){
+    if (rc) {
        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(this->db));
-    }
-    else{
+    } else{
       fprintf(stderr, "Opened database successfully\n");
     }
 }
