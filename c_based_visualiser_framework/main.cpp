@@ -20,12 +20,11 @@
  */
 
 char* get_next_arg(int position, char **argv, int argc){
-	if (position + 1 > argc){
-		throw "missing a element";
-	}
-	else{
-		return argv[position + 1];
-	}
+    if (position + 1 > argc){
+        throw "missing a element";
+    } else{
+        return argv[position + 1];
+    }
 }
 
 int main(int argc, char **argv){
@@ -49,86 +48,85 @@ int main(int argc, char **argv){
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
 
-		if (strcmp(argv[arg_index], "-hand_shake_port") == 0){
-			hand_shake_listen_port_no = atoi(get_next_arg(arg_index, argv, argc));
-		}
-		if (strcmp(argv[arg_index], "-database") == 0){
-			absolute_file_path = get_next_arg(arg_index, argv, argc);
-		}
-		if (strcmp(argv[arg_index], "-colour_map") == 0){
-			colour_file_path = get_next_arg(arg_index, argv, argc);
-		}
-		if (strcmp(argv[arg_index], "-port") == 0){
-			packet_listener_port_no = atoi(get_next_arg(arg_index, argv, argc));
-		}
-		if (strcmp(argv[arg_index], "-remote_host") == 0) {
-		    remote_host = get_next_arg(arg_index, argv, argc);
-		}
+        if (strcmp(argv[arg_index], "-hand_shake_port") == 0){
+            hand_shake_listen_port_no = atoi(get_next_arg(arg_index, argv, argc));
+        }
+        if (strcmp(argv[arg_index], "-database") == 0){
+            absolute_file_path = get_next_arg(arg_index, argv, argc);
+        }
+        if (strcmp(argv[arg_index], "-colour_map") == 0){
+            colour_file_path = get_next_arg(arg_index, argv, argc);
+        }
+        if (strcmp(argv[arg_index], "-port") == 0){
+            packet_listener_port_no = atoi(get_next_arg(arg_index, argv, argc));
+        }
+        if (strcmp(argv[arg_index], "-remote_host") == 0) {
+            remote_host = get_next_arg(arg_index, argv, argc);
+        }
     }
 
-	if (colour_file_path == NULL or packet_listener_port_no == -1) {
-		printf("Usage is \n "
-				"[-hand_shake_port]"
-				"<optional port which the visualiser will listen to for"
-		        " database hand shaking>\n"
-		        "[-database]"
-		        "<optional file path to where the database is located,"
-		        " if needed for manual configuration>\n"
-			    "-colour_map "
-			    "<file path to where the colour is located>\n"
-				"-port "
-				"<port which the visualiser will listen for packets>\n"
-		        "[-remote_host] "
-		        "<optional remote host, which will allow port triggering>\n");
-		return 1;
-	}
+    if (colour_file_path == NULL or packet_listener_port_no == -1) {
+        printf("Usage is \n "
+               "[-hand_shake_port]"
+               "<optional port which the visualiser will listen to for"
+               " database hand shaking>\n"
+               "[-database]"
+               "<optional file path to where the database is located,"
+               " if needed for manual configuration>\n"
+               "-colour_map "
+               "<file path to where the colour is located>\n"
+               "-port "
+               "<port which the visualiser will listen for packets>\n"
+               "[-remote_host] "
+               "<optional remote host, which will allow port triggering>\n");
+        return 1;
+    }
 
-	std::map<int, char*> *y_axis_labels;
-	std::map<int, int> *key_to_neuronid_map;
-	std::map<int, struct colour> *neuron_id_to_colour_map;
-	// initilise the visulaiser config
+    std::map<int, char*> *y_axis_labels;
+    std::map<int, int> *key_to_neuronid_map;
+    std::map<int, struct colour> *neuron_id_to_colour_map;
+    // initilise the visulaiser config
 
-	DatabaseMessageConnection *hand_shaker = NULL;
-	if (hand_shake_listen_port_no != -1) {
+    DatabaseMessageConnection *hand_shaker = NULL;
+    if (hand_shake_listen_port_no != -1) {
         hand_shaker = new DatabaseMessageConnection(hand_shake_listen_port_no);
         printf("awaiting tool chain hand shake to say database is ready \n");
         packet_file_path = hand_shaker->recieve_notification();
         printf("received tool chain hand shake to say database is ready \n");
-	} else{
-	    if (!absolute_file_path){
-	        printf("no hand shaking occured and you give us a path"
-	               "to the database. Please rectify one of these and try"
-	               "again \n");
-	        return 0;
-	    }
-	}
+    } else{
+        if (!absolute_file_path){
+            printf("no hand shaking occured and you give us a path"
+                "to the database. Please rectify one of these and try"
+                "again \n");
+            return 0;
+        }
+    }
 
-	printf("path : (%s) \n", packet_file_path);
+    printf("path : (%s) \n", packet_file_path);
 
     DatabaseReader* reader = NULL;
     if (!absolute_file_path){
         printf("using packet based address \n");
         reader = new DatabaseReader(packet_file_path);
-    }
-    else{
+    } else {
         printf("using command based address \n");
         reader = new DatabaseReader(absolute_file_path);
     }
 
-	printf("reading in labels \n");
-	y_axis_labels = reader->read_database_for_labels();
-	printf("reading in keys \n");
-	key_to_neuronid_map = reader->read_database_for_keys();
-	printf("reading in colour maps\n");
-	neuron_id_to_colour_map = reader->read_color_map(colour_file_path);
-	printf("reading parameters\n");
-	std::map<std::string, float> *config_params =
-	        reader->get_configuration_parameters();
-	printf("closing database connection \n");
-	reader->close_database_connection();
-	delete reader;
+    printf("reading in labels \n");
+    y_axis_labels = reader->read_database_for_labels();
+    printf("reading in keys \n");
+    key_to_neuronid_map = reader->read_database_for_keys();
+    printf("reading in colour maps\n");
+    neuron_id_to_colour_map = reader->read_color_map(colour_file_path);
+    printf("reading parameters\n");
+    std::map<std::string, float> *config_params =
+            reader->get_configuration_parameters();
+    printf("closing database connection \n");
+    reader->close_database_connection();
+    delete reader;
 
-	if (hand_shaker != NULL) {
+    if (hand_shaker != NULL) {
 
         // create and send the eieio command message confirming database read
         printf("send confirmation database connection \n");
@@ -136,17 +134,17 @@ int main(int argc, char **argv){
         hand_shaker->close_connection();
         delete hand_shaker;
         printf("close connection \n");
-	}
+    }
 
-	// set up visualiser packet listener
-	fprintf(stderr, "Starting\n");
-	SocketQueuer queuer(packet_listener_port_no, remote_host);
-	queuer.start();
+    // set up visualiser packet listener
+    fprintf(stderr, "Starting\n");
+    SocketQueuer queuer(packet_listener_port_no, remote_host);
+    queuer.start();
 
     //create visualiser
     RasterPlot plotter(argc, argv, &queuer, y_axis_labels,
                        key_to_neuronid_map, neuron_id_to_colour_map,
                        (*config_params)["runtime"],
                        (*config_params)["machine_time_step"] / 1000.0);
-	return 0;
+    return 0;
 }
