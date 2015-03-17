@@ -17,197 +17,218 @@
 
 using namespace std;
 
-struct database_data{
-	int no_columns;
-	char ** fields;
-	char ** attributes;
-};
+static inline char *get_column_string_copy(sqlite3_stmt *compiled_statement,
+                                           int column) {
+    char *label = (char*) sqlite3_column_text(compiled_statement, column);
+    char *labelcopy = (char *) malloc(strlen(label) + 1);
+    strcpy(labelcopy, label);
+    return labelcopy;
+}
 
-DatabaseReader::DatabaseReader(char* given_path_to_database) {
-    char* absolute_path_to_database;
 
-    absolute_path_to_database = given_path_to_database;
+DatabaseReader::DatabaseReader(char *database_path) {
     int rc;
-    rc = sqlite3_open(given_path_to_database, &this->db);
-    if(rc){
-       fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(this->db));
-    }
-    else{
-      fprintf(stderr, "Opened database successfully\n");
+    fprintf(stderr, "Reading database %s\n", database_path);
+    rc = sqlite3_open(database_path, &this->db);
+    if (rc) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(this->db));
+    } else{
+        fprintf(stderr, "Opened database successfully\n");
     }
 }
 
-map<int, int> *DatabaseReader::read_database_for_keys() {
-    // Alternate query:
-    // SELECT p.vertex_id, gm.lo_atom, gm.hi_atom, r.key
-    // FROM Partitionable_vertices as p
-    // JOIN graph_mapper_vertex as gm ON p.vertex_id == gm.partitionable_vertex_id
-    // JOIN Partitioned_edges as e ON gm.partitioned_vertex_id == e.pre_vertex
-    // JOIN Routing_info as r ON e.edge_id == r.edge_id
-    // WHERE p.recorded == 1
-    // ORDER BY p.vertex_id, gm.lo_atom;
-    // Problem - this gives you the range of atoms rather than the key, so you
-    // have to know where the atom occurs in the key
-	string sqls =
-	    "SELECT n.neuron_id, n.key, n.vertex_id"
-	    " FROM key_to_neuron_mapping as n JOIN Partitionable_vertices as p"
-	    " ON p.vertex_id=n.vertex_id  WHERE p.recorded == 1"
-	    " ORDER BY p.vertex_id, n.neuron_id";
-	char* sql = &sqls[0];
-	map<int, int> *key_to_neuronid_map = new map<int, int>();
-	sqlite3_stmt *compiled_statment;
-	int offset = 0;
-	int current_counter = 0;
-	int current_vertex_id = -1;
-	if (sqlite3_prepare_v2(this->db, sql, -1,
-			               &compiled_statment, NULL) == SQLITE_OK){
-		while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-			int neuron_id = sqlite3_column_int(compiled_statment, 0);
-			int key = sqlite3_column_int(compiled_statment, 1);
-			int vertex_id = sqlite3_column_int(compiled_statment, 2);
-			//fprintf(stderr, "Database key %i = %i\n", key, neuron_id + offset);
-			(*key_to_neuronid_map)[key] = neuron_id + offset;
-			if (vertex_id != current_vertex_id){
-				offset = current_counter;
-				current_vertex_id = vertex_id;
-			}
-			current_counter ++;
-		 }
-	} else {
-	    fprintf(stderr, "Error reading database: %i: %s\n",
-	            sqlite3_errcode(this->db),
-	            sqlite3_errmsg(this->db));
-	    exit(-1);
-	}
-	//close query and return labels
-	sqlite3_finalize(compiled_statment);
-	return key_to_neuronid_map;
+DatabaseReader::~DatabaseReader() {
+    this->close_database_connection();
 }
 
-map<int, char*> *DatabaseReader::read_database_for_labels(){
-	// convert sql to char
-	string sqls = "SELECT vertex_label, no_atoms FROM Partitionable_vertices "
-			      "WHERE recorded == 1 ORDER BY vertex_id";
-	int offset = 0;
-	char* sql = &sqls[0];
-	map<int, char*> *y_axis_labels = new map<int, char*>();
-	sqlite3_stmt *compiled_statment;
-	/* Execute SQL statement */
-	if (sqlite3_prepare_v2(this->db, sql, -1,
-			               &compiled_statment, NULL) == SQLITE_OK){
-		 while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-			char *label = (char*) sqlite3_column_text(compiled_statment, 0);
-			char *labelcopy = (char *) malloc(strlen(label) + 1);
-			strcpy(labelcopy, label);
-			int n_atoms = sqlite3_column_int(compiled_statment, 1);
-			(*y_axis_labels)[(n_atoms/2) + offset] = labelcopy;
-			offset += n_atoms;
-		 }
-	} else {
-        fprintf(stderr, "Error reading database: %i: %s\n",
-                sqlite3_errcode(this->db),
-                sqlite3_errmsg(this->db));
-        exit(-1);
-    }
-	//close query and return labels
-	sqlite3_finalize(compiled_statment);
-	return y_axis_labels;
+sqlite3 *DatabaseReader::get_cursor() {
+    return this->db;
 }
 
-map<int, struct colour> *DatabaseReader::read_color_map(char* colour_file_path){
-	// reads in the colour mapping file and expands
-	map<string, struct colour> pop_label_to_colour_map;
-	FILE *colour_fp = fopen(colour_file_path, "r");
-	char line[80];
-	while (fgets(line, 80, colour_fp) != NULL) {
-		int r;
-		int g;
-		int b;
-		struct colour colour;
-		char *pop_label = (char *) malloc(80);
-		sscanf(line, "%s\t%d\t%d\t%d",pop_label, &r, &g, &b);
-		colour.r = (float) r / 255.0;
-		colour.g = (float) g / 255.0;
-		colour.b = (float) b / 255.0;
-		string key(pop_label);
-		pop_label_to_colour_map[key] = colour;
-	}
-	fclose(colour_fp);
-	// convert sql to char
-	string sqls = "SELECT vertex_label, no_atoms FROM Partitionable_vertices "
-				  "WHERE recorded == 1 ORDER BY vertex_id";
-	int offset = 0;
-	char* sql = &sqls[0];
-	map<int, struct colour> *neuron_id_to_colour_map =
-	        new map<int, struct colour>();
-	sqlite3_stmt *compiled_statment;
-	/* Execute SQL statement */
-	if (sqlite3_prepare_v2(this->db, sql, -1,
-						   &compiled_statment, NULL) == SQLITE_OK){
-		 while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-			char* label = (char*) sqlite3_column_text(compiled_statment, 0);
-			string key(label);
-
-			struct colour colour = pop_label_to_colour_map[key];
-            if (pop_label_to_colour_map.find(key)
-                    == pop_label_to_colour_map.end()) {
-                fprintf(stderr, "Missing colour for population %s\n", label);
-                continue;
-            }
-			int n_atoms = sqlite3_column_int(compiled_statment, 1);
-			// convert to neuron id mapping
-			int nid = 0;
-			for (nid = 0; nid < n_atoms; nid++) {
-				(*neuron_id_to_colour_map)[nid + offset] = colour;
-				//fprintf(stderr, "%s: Neuron %i colour %f, %f, %f\n",
-				//    label, nid + offset, colour.r, colour.g, colour.b);
-			}
-			offset += n_atoms;
-		 }
-	} else {
-        fprintf(stderr, "Error reading database: %i: %s\n",
-                sqlite3_errcode(this->db),
-                sqlite3_errmsg(this->db));
-        exit(-1);
-    }
-	//close query and return labels
-	sqlite3_finalize(compiled_statment);
-	return neuron_id_to_colour_map;
-}
-
-map<string, float> *DatabaseReader::get_configuration_parameters() {
-    string sqls = "SELECT parameter_id, value FROM configuration_parameters";
-    char* sql = &sqls[0];
-    map<string, float> *configuration_parameters = new map<string, float>();
+std::vector<char *> *DatabaseReader::get_live_population_labels() {
+    char *sql = sqlite3_mprintf(
+        "SELECT pre_vertices.vertex_label"
+        " FROM Partitionable_vertices as pre_vertices"
+        " JOIN Partitionable_edges as edges"
+        " ON pre_vertices.partitionable_vertex_id == edges.pre_vertex"
+        " JOIN Partitionable_vertices as post_vertices"
+        " ON edges.post_vertex = post_vertices.vertex_id"
+        " WHERE post_vertices.vertex_label == \"Monitor\"");
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
+        std::vector<char *> *labels = new std::vector<char *>();
         while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-            char *parameter_id = (char*) sqlite3_column_text(
-                compiled_statment, 0);
-            char *parameter_id_copy = (char *) malloc(strlen(parameter_id));
-            strcpy(parameter_id_copy, parameter_id);
-            float value = sqlite3_column_double(compiled_statment, 1);
-            fprintf(stderr, "%s = %f\n", parameter_id_copy, value);
-            string key(parameter_id_copy);
-            (*configuration_parameters)[key] = value;
-         }
+            char *label = get_column_string_copy(compiled_statment, 0);
+            labels->push_back(label);
+        }
+        free(sql);
+        return labels;
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
                 sqlite3_errcode(this->db),
                 sqlite3_errmsg(this->db));
         exit(-1);
     }
-    //close query and return labels
-    sqlite3_finalize(compiled_statment);
-    return configuration_parameters;
+}
+
+std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
+    char *sql = sqlite3_mprintf(
+        "SELECT n.neuron_id as n_id, n.key as key"
+        " FROM key_to_neuron_mapping as n"
+        " JOIN Partitionable_vertices as p ON n.vertex_id = p.vertex_id"
+        " WHERE p.vertex_label=\"%q\"", label);
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        std::map<int, int> *key_to_neuron_id_map = new std::map<int, int>();
+        while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            int neuron_id = sqlite3_column_int(compiled_statment, 0);
+            int key = sqlite3_column_int(compiled_statment, 1);
+            (*key_to_neuron_id_map)[key] = neuron_id;
+        }
+        free(sql);
+        return key_to_neuron_id_map;
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
+}
+
+std::map<int, int> *DatabaseReader::get_neuron_id_to_key_mapping(char* label) {
+    char *sql = sqlite3_mprintf(
+        "SELECT n.neuron_id as n_id, n.key as key"
+        " FROM key_to_neuron_mapping as n"
+        " JOIN Partitionable_vertices as p ON n.vertex_id = p.vertex_id"
+        " WHERE p.vertex_label=\"%q\"", label);
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        std::map<int, int> *neuron_id_to_key_map = new std::map<int, int>();
+        while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            int neuron_id = sqlite3_column_int(compiled_statment, 0);
+            int key = sqlite3_column_int(compiled_statment, 1);
+            (*neuron_id_to_key_map)[neuron_id] = key;
+        }
+        free(sql);
+        return neuron_id_to_key_map;
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
+}
+
+ip_tag_info *DatabaseReader::get_live_output_details(char *label) {
+    char *sql = sqlite3_mprintf(
+        "SELECT tag.ip_address, tag.port, tag.strip_sdp FROM IP_tags as tag"
+        " JOIN graph_mapper_vertex as mapper"
+        " ON tag.vertex_id = mapper.partitioned_vertex_id"
+        " JOIN Partitionable_vertices as post_vertices"
+        " ON mapper.partitionable_vertex_id = post_vertices.vertex_id"
+        " JOIN Partitionable_edges as edges"
+        " ON mapper.partitionable_vertex_id == edges.post_vertex"
+        " JOIN Partitionable_vertices as pre_vertices"
+        " ON edges.pre_vertex == pre_vertices.vertex_id"
+        " WHERE pre_vertices.vertex_label == \"%q\""
+        " AND post_vertices.vertex_label == \"Monitor\"", label);
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        free(sql);
+        if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            ip_tag_info *tag_info = (ip_tag_info *) malloc(sizeof(ip_tag_info));
+            tag_info->ip_address = get_column_string_copy(compiled_statment, 0);
+            tag_info->port = sqlite3_column_int(compiled_statment, 1);
+            tag_info->strip_sdp = sqlite3_column_int(compiled_statment, 2) == 1;
+            return tag_info;
+        }
+        fprintf(stderr, "No ip tag found for population %s\n", label);
+        exit(-1);
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
+}
+
+reverse_ip_tag_info *DatabaseReader::get_live_input_details(char *label) {
+    char *sql = sqlite3_mprintf(
+        "SELECT tag.board_address, tag.port as port"
+        " FROM Reverse_IP_tags as tag"
+        " JOIN graph_mapper_vertex as mapper"
+        " ON tag.vertex_id = mapper.partitioned_vertex_id"
+        " JOIN Partitionable_vertices as partitionable"
+        " ON mapper.partitionable_vertex_id = partitionable.vertex_id"
+        " WHERE partitionable.vertex_label=\"%q\"", label);
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        free(sql);
+        if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            reverse_ip_tag_info *tag_info =
+                (reverse_ip_tag_info *) malloc(sizeof(reverse_ip_tag_info));
+            tag_info->board_address = get_column_string_copy(compiled_statment,
+                                                             0);
+            tag_info->port = sqlite3_column_int(compiled_statment, 1);
+            return tag_info;
+        }
+        fprintf(stderr, "No reverse ip tag found for population %s\n", label);
+        exit(-1);
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
+}
+
+int DatabaseReader::get_n_neurons(char *label) {
+    char *sql = sqlite3_mprintf(
+        "SELECT no_atoms FROM Partitionable_vertices"
+        " WHERE vertex_label = \"%q\"", label);
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        free(sql);
+        if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            return sqlite3_column_int(compiled_statment, 0);
+        }
+        fprintf(stderr, "Population %s not found\n", label);
+        exit(-1);
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
+}
+
+float DatabaseReader::get_configuration_parameter_value(char *parameter_name) {
+    char *sql = sqlite3_mprintf(
+        "SELECT value FROM configuration_parameters"
+        " WHERE parameter_id = \"%q\"", parameter_name);
+    sqlite3_stmt *compiled_statment;
+    if (sqlite3_prepare_v2(this->db, sql, -1,
+                           &compiled_statment, NULL) == SQLITE_OK){
+        free(sql);
+        if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
+            return sqlite3_column_double(compiled_statment, 0);
+        }
+        fprintf(stderr, "Parameter %s not found\n", parameter_name);
+        exit(-1);
+    } else {
+        fprintf(stderr, "Error reading database: %i: %s\n",
+                sqlite3_errcode(this->db),
+                sqlite3_errmsg(this->db));
+        exit(-1);
+    }
 }
 
 void DatabaseReader::close_database_connection(){
-	sqlite3_close(this->db);
+    sqlite3_close(this->db);
 }
-
-DatabaseReader::~DatabaseReader() {
-	// TODO Auto-generated destructor stub
-}
-

@@ -28,25 +28,27 @@ typedef int socklen_t;
 #ifndef C_VIS_DATABASE_SOCKETQUEUER_H_
 #define C_VIS_DATABASE_SOCKETQUEUER_H_
 
+#include <stdio.h>
+
 class SocketQueuer : public Threadable {
 public:
-	SocketQueuer(int, char*);
-	virtual ~SocketQueuer();
-	eieio_message get_next_packet();
-	void free_packet(eieio_message);
-	bool is_queue_empty();
+    SocketQueuer(int, char*);
+    virtual ~SocketQueuer();
+    eieio_message get_next_packet();
+    void free_packet(eieio_message);
+    bool is_queue_empty();
 protected:
-	void InternalThreadEntry();
+    virtual void InternalThreadEntry();
 private:
-	void init_sdp_listening(int);
-	void send_void_message(char *, int);
-	std::deque<eieio_message> queue;
-	int sockfd_input;
-	struct sockaddr_in si_other; // for incoming frames
-	socklen_t addr_len_input;
-	char sdp_header_len;
-	pthread_mutex_t spike_mutex;
-	pthread_cond_t cond;
+    void init_sdp_listening(int);
+    void send_void_message(char *, int);
+    std::deque<eieio_message> queue;
+    int sockfd_input;
+    struct sockaddr_in si_other; // for incoming frames
+    socklen_t addr_len_input;
+    char sdp_header_len;
+    pthread_mutex_t spike_mutex;
+    pthread_cond_t cond;
 };
 
 #endif /* C_VIS_DATABASE_SOCKETQUEUER_H_ */

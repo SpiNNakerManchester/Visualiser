@@ -1,4 +1,5 @@
-OBJECTS = utilities/DatabaseReader.o \
+OBJECTS = utilities/ColourReader.o \
+          utilities/DatabaseReader.o \
           utilities/DatabaseMessageConnection.o \
           utilities/SocketQueuer.o \
           utilities/Threadable.o \

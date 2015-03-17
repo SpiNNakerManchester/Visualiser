@@ -27,7 +27,7 @@ class DatabaseMessageConnection {
 public:
 	virtual ~DatabaseMessageConnection();
 	DatabaseMessageConnection(int listen_port);
-	eieio_message recieve_notification();
+	char* recieve_notification();
 	void send_ready_notification();
 	void close_connection();
 private:

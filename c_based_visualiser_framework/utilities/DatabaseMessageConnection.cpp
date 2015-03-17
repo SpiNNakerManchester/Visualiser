@@ -71,12 +71,12 @@ void DatabaseMessageConnection::init_sdp_listening(int listen_port) {
     freeaddrinfo(servinfo_input);
 }
 
-eieio_message DatabaseMessageConnection::recieve_notification(){
+char* DatabaseMessageConnection::recieve_notification(){
 	socklen_t addr_len_input = sizeof(struct sockaddr_in);
 	char sdp_header_len = 26;
 	unsigned char buffer_input[1515];
 	bool received = false;
-
+    char* absolute_path = NULL;
 
 	while (!received){
 		int numbytes_input = recvfrom(
@@ -93,8 +93,17 @@ eieio_message DatabaseMessageConnection::recieve_notification(){
 			fprintf(stderr, "Error - packet too short\n");
 			continue;
 		}
+		printf("packet received\n");
+		if (!absolute_path){
+		    absolute_path = (char*) malloc(sizeof(char) * (numbytes_input -1));
+		    for(int position =2; position < numbytes_input; position++){
+                absolute_path[position-2] = buffer_input[position];
+            }
+            absolute_path[numbytes_input-2] = '\0';
+		}
 		received = true;
 	}
+	return absolute_path;
 }
 
 void DatabaseMessageConnection::send_ready_notification(){
