@@ -14,18 +14,18 @@
 using namespace std;
 
 SocketQueuer::SocketQueuer(int listen_port, char *hostname) {
-	this->addr_len_input = sizeof(this->si_other);
-	this->sdp_header_len = 26;
-	fprintf(stderr, "Socket Queuer Listening...\n");
-	init_sdp_listening(listen_port);
-	if (hostname != NULL) {
-	    send_void_message(hostname, 17893);
-	}
-	if (pthread_mutex_init(&this->spike_mutex, NULL) == -1) {
-	        fprintf(stderr, "Error initializing mutex!\n");
-	        exit(-1);
-	    }
-	pthread_cond_init(&this->cond, 0);
+    this->addr_len_input = sizeof(this->si_other);
+    this->sdp_header_len = 26;
+    fprintf(stderr, "Socket Queuer Listening...\n");
+    init_sdp_listening(listen_port);
+    if (hostname != NULL) {
+        send_void_message(hostname, 17893);
+    }
+    if (pthread_mutex_init(&this->spike_mutex, NULL) == -1) {
+        fprintf(stderr, "Error initializing mutex!\n");
+        exit(-1);
+    }
+    pthread_cond_init(&this->cond, 0);
 }
 
 // setup socket for SDP frame receiving on port SDPPORT defined about (usually 17894)
@@ -100,61 +100,63 @@ void SocketQueuer::send_void_message(char *hostname, int port) {
     }
 }
 
-void SocketQueuer::InternalThreadEntry(){
-	unsigned char buffer_input[1515];
-	while (1) {                             // for ever ever, ever ever.
-		int numbytes_input = recvfrom(this->sockfd_input, (char *) buffer_input,
-				sizeof(buffer_input), 0, (sockaddr*) &this->si_other,
-				(socklen_t*) &this->addr_len_input);
-		if (numbytes_input == -1) {
-			fprintf(stderr, "Packet not received, exiting\n");
-			exit(-1);
-		}
-		if (numbytes_input < 9) {
-			fprintf(stderr, "Error - packet too short\n");
-			continue;
-		}
-        // create eieio message
-		struct eieio_message* new_message = new eieio_message();
+void SocketQueuer::InternalThreadEntry() {
+    unsigned char buffer_input[1515];
 
-		new_message->header.count = buffer_input[0];
-		new_message->header.p = ((buffer_input[1] >> 7) & 1);
-		new_message->header.f = ((buffer_input[1] >> 6) & 1);
-		new_message->header.d = ((buffer_input[1] >> 5) & 1);
-		new_message->header.t = ((buffer_input[1] >> 4) & 1);
-		new_message->header.type = ((buffer_input[1] >> 2) & 3);
-		new_message->header.tag = (buffer_input[1] & 3);
-		new_message->data = (unsigned char *) malloc(numbytes_input - 2);
-		memcpy(new_message->data, &buffer_input[2], numbytes_input - 2);
-		// load message into buffer
-		pthread_mutex_lock(&this->spike_mutex);
-		this->queue.push_back(*new_message);
-		pthread_cond_signal(&this->cond);
-		pthread_mutex_unlock(&this->spike_mutex);
-	}
+    // for ever ever, ever ever.
+    while (1) {
+        int numbytes_input = recvfrom(this->sockfd_input, (char *) buffer_input,
+                sizeof(buffer_input), 0, (sockaddr*) &this->si_other,
+                (socklen_t*) &this->addr_len_input);
+        if (numbytes_input == -1) {
+            fprintf(stderr, "Packet not received, exiting\n");
+            exit(-1);
+        }
+        if (numbytes_input < 9) {
+            fprintf(stderr, "Error - packet too short\n");
+            continue;
+        }
+        // create eieio message
+        struct eieio_message* new_message = new eieio_message();
+
+        new_message->header.count = buffer_input[0];
+        new_message->header.p = ((buffer_input[1] >> 7) & 1);
+        new_message->header.f = ((buffer_input[1] >> 6) & 1);
+        new_message->header.d = ((buffer_input[1] >> 5) & 1);
+        new_message->header.t = ((buffer_input[1] >> 4) & 1);
+        new_message->header.type = ((buffer_input[1] >> 2) & 3);
+        new_message->header.tag = (buffer_input[1] & 3);
+        new_message->data = (unsigned char *) malloc(numbytes_input - 2);
+        memcpy(new_message->data, &buffer_input[2], numbytes_input - 2);
+        // load message into buffer
+        pthread_mutex_lock(&this->spike_mutex);
+        this->queue.push_back(*new_message);
+        pthread_cond_signal(&this->cond);
+        pthread_mutex_unlock(&this->spike_mutex);
+    }
 }
 
 eieio_message SocketQueuer::get_next_packet(){
-	eieio_message packet;
-	pthread_mutex_lock(&this->spike_mutex);
-	while(this->queue.size() == 0) {
+    eieio_message packet;
+    pthread_mutex_lock(&this->spike_mutex);
+    while(this->queue.size() == 0) {
         pthread_cond_wait(&this->cond, &this->spike_mutex);
     }
-	packet = this->queue.front();
-	this->queue.pop_front();
-	pthread_mutex_unlock(&this->spike_mutex);
-	return packet;
+    packet = this->queue.front();
+    this->queue.pop_front();
+    pthread_mutex_unlock(&this->spike_mutex);
+    return packet;
 }
 
 bool SocketQueuer::is_queue_empty(){
-	return this->queue.empty();
+    return this->queue.empty();
 }
 
 void free_packet(eieio_message message){
-	free(message.data);
+    free(message.data);
 
 }
 
 SocketQueuer::~SocketQueuer() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }

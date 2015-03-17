@@ -18,19 +18,23 @@
  */
 class Threadable {
 public:
-	Threadable();
-	virtual ~Threadable();
-	bool start(){
-		return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);
+    Threadable();
+    virtual ~Threadable();
+    bool start(){
+        return (pthread_create(&_thread, NULL, InternalThreadEntryFunc,
+                this) == 0);
     }
-	void exit_thread(){
-		(void) pthread_join(_thread, NULL);
-	}
+    void exit_thread(){
+        (void) pthread_join(_thread, NULL);
+    }
 protected:
    /** Implement this method in your subclass with the code you want your thread to run. */
    virtual void InternalThreadEntry() = 0;
 private:
-   static void * InternalThreadEntryFunc(void * This) {((Threadable *)This)->InternalThreadEntry(); return NULL;}
+   static void *InternalThreadEntryFunc(void * This) {
+       ((Threadable *)This)->InternalThreadEntry();
+       return NULL;
+   }
    pthread_t _thread;
 };
 

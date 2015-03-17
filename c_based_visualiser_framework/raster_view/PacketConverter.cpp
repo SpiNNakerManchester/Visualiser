@@ -32,11 +32,11 @@ PacketConverter::PacketConverter(SocketQueuer *packet_queue,
 
 void PacketConverter::InternalThreadEntry(){
     while (1) {
-        eieio_message message;
-        message = this->packet_queue->get_next_packet();
+        eieio_message message = this->packet_queue->get_next_packet();
         list<pair<int, int> > data;
         translate_eieio_message_to_points(message, data);
-        //add points to the point queue
+
+        // add points to the point queue
         pthread_mutex_lock(this->point_mutex);
         for(list<pair<int, int> >::iterator iter = data.begin();
                 iter != data.end(); ++iter) {
@@ -88,8 +88,6 @@ void PacketConverter::translate_eieio_message_to_points(
                 fprintf(stderr, "Missing neuron id for key %d\n", key);
                 continue;
             }
-            //fprintf(stderr, "time = %i, key = %i, neuron_id = %i\n", time, key,
-            //        neuron_id);
             pair<int, int> point(time, neuron_id);
             points.push_back(point);
         }

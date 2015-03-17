@@ -14,43 +14,53 @@
 #include <time.h>
 #include "RasterPlot.h"
 #include "PacketConverter.h"
-//#include "../utilities/SocketQueuer.h"
+#include "../utilities/SocketQueuer.h"
 #include "../utilities/colour.h"
 #include "../glut_framework/GlutFramework.h"
 
 using namespace glutFramework;
 using namespace std;
 
-RasterPlot::RasterPlot(int argc, char **argv, SocketQueuer *queuer,
-		               map<int, char*> *y_axis_labels,
-		               map<int, int> *key_to_neuronid_map,
-		               map<int, struct colour> *neuron_id_to_colour_map,
-		               float plot_time_ms, float timestep_ms) {
+RasterPlot::RasterPlot(int argc, char **argv, char *remote_host,
+                    std::vector<int> *ports,
+                    map<int, char*> *y_axis_labels,
+                    map<int, int> *key_to_neuronid_map,
+                    map<int, colour> *neuron_id_to_colour_map,
+                    float plot_time_ms, float timestep_ms, int n_neurons,
+                    DatabaseMessageConnection *database_message_connection) {
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
 
     this->y_axis_labels = y_axis_labels;
-	this->key_to_neuronid_map = key_to_neuronid_map;
-	this->neuron_id_to_colour_map = neuron_id_to_colour_map;
-	this->plot_time_ms = plot_time_ms;
-	this->timestep_ms = timestep_ms;
-	this->n_neurons = key_to_neuronid_map->size();
+    this->key_to_neuronid_map = key_to_neuronid_map;
+    this->neuron_id_to_colour_map = neuron_id_to_colour_map;
+    this->plot_time_ms = plot_time_ms;
+    this->timestep_ms = timestep_ms;
+    this->n_neurons = n_neurons;
+    this->database_message_connection = database_message_connection;
 
-	fprintf(stderr, "n_neurons = %i\n", this->n_neurons);
-	fprintf(stderr, "plot time = %f\n", this->plot_time_ms);
-	fprintf(stderr, "timestep = %f\n", this->timestep_ms);
+    fprintf(stderr, "n_neurons = %i\n", this->n_neurons);
+    fprintf(stderr, "plot time = %f\n", this->plot_time_ms);
+    fprintf(stderr, "timestep = %f\n", this->timestep_ms);
 
 
-	if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
+    if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
         fprintf(stderr, "Error initializing mutex!\n");
         exit(-1);
     }
-	PacketConverter translater(queuer, &(this->points_to_draw),
-	                           &(this->point_mutex),
-			                   this->key_to_neuronid_map);
-	translater.start();
-	startFramework(argc, argv, "Raster Plot", window_width, window_height,
-	               INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
+
+    for (std::vector<int>::iterator iter = ports->begin();
+            iter != ports->end(); iter++) {
+        int port = *iter;
+        SocketQueuer *queuer = new SocketQueuer(port, remote_host);
+        queuer->start();
+        PacketConverter *translater = new PacketConverter(
+            queuer, &(this->points_to_draw), &(this->point_mutex),
+            this->key_to_neuronid_map);
+        translater->start();
+    }
+    startFramework(argc, argv, "Raster Plot", window_width, window_height,
+                INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
 }
 
 void RasterPlot::init() {
@@ -63,7 +73,7 @@ void RasterPlot::init() {
 //  Draws a string at the specified coordinates.
 //-------------------------------------------------------------------------
 void RasterPlot::printgl(float x, float y, void *font_style,
-		char* format, ...) {
+        char* format, ...) {
     va_list arg_list;
     char str[256];
     int i;
@@ -85,7 +95,7 @@ void RasterPlot::printgl(float x, float y, void *font_style,
 }
 
 void RasterPlot::printglstroke(float x, float y, float size, float rotate,
-		char* format, ...) {
+        char* format, ...) {
     va_list arg_list;
     char str[256];
     int i;
@@ -139,8 +149,8 @@ void RasterPlot::display(float time) {
                 iter != y_axis_labels->end(); ++iter) {
             float y_value = ((iter->first * y_spacing) + WINDOW_BORDER) - 10;
             float width =
-            		glutStrokeLength(GLUT_STROKE_ROMAN,
-            		                 reinterpret_cast<const unsigned char*>
+                    glutStrokeLength(GLUT_STROKE_ROMAN,
+                                    reinterpret_cast<const unsigned char*>
                                      (iter->second))
                     * 0.1;
             char y_label[] = "%s";
@@ -191,15 +201,29 @@ void RasterPlot::reshape(int width, int height) {
         this->window_width = width;
         this->window_height = height;
 
-        //printf("Wid: %d, Hei: %d.\n",width,height);
-        glViewport(0, 0, (GLsizei) width, (GLsizei) height); // viewport dimensions
+        // viewport dimensions
+        glViewport(0, 0, (GLsizei) width, (GLsizei) height);
         glMatrixMode (GL_PROJECTION);
         glLoadIdentity();
+
         // an orthographic projection. Should probably look into OpenGL
-        //perspective projections for 3D if that's your thing
+        // perspective projections for 3D if that's your thing
         glOrtho(0.0, width, 0.0, height, -50.0, 50.0);
         glMatrixMode (GL_MODELVIEW);
         glLoadIdentity();
+    }
+}
+
+void RasterPlot::keyboardUp(unsigned char key, int x, int y) {
+    if ((int) key == 13) {
+        if (database_message_connection != NULL) {
+
+            // create and send the eieio command message confirming database
+            // read
+            printf("Starting the simulation\n");
+            database_message_connection->send_ready_notification();
+            database_message_connection->close_connection();
+        }
     }
 }
 
@@ -208,5 +232,5 @@ void RasterPlot::safelyshut(void) {
 }
 
 RasterPlot::~RasterPlot() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }

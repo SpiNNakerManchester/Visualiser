@@ -9,11 +9,11 @@
 #define C_VIS_DATABASE_COLOUR_H_
 
 
-struct colour {
+typedef struct colour {
     float r;
     float g;
     float b;
-};
+} colour;
 
 
 #endif /* C_VIS_DATABASE_COLOUR_H_ */
