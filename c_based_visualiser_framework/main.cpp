@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
 #include <string.h>
 #include "main.h"
 #include "utilities/DatabaseReader.h"
@@ -77,19 +78,12 @@ int main(int argc, char **argv){
     }
 
     DatabaseMessageConnection *database_message_connection = NULL;
-    if (hand_shake_listen_port_no != -1) {
+    if (absolute_file_path == NULL) {
         database_message_connection = new DatabaseMessageConnection(
             hand_shake_listen_port_no);
         printf("awaiting tool chain hand shake to say database is ready \n");
         packet_file_path = database_message_connection->recieve_notification();
         printf("received tool chain hand shake to say database is ready \n");
-    } else{
-        if (!absolute_file_path){
-            printf("no hand shaking occured and you give us a path"
-                "to the database. Please rectify one of these and try"
-                "again \n");
-            return 0;
-        }
     }
 
     // Open the database
@@ -111,15 +105,16 @@ int main(int argc, char **argv){
     std::map<int, int> *key_to_neuronid_map = new std::map<int, int>();
     std::map<int, colour> *neuron_id_to_colour_map =
             new std::map<int, colour>();
-    std::vector<int> *ports_to_listen_to = new std::vector<int>();
+    std::set<int> *ports_to_listen_to = new std::set<int>();
     int base_neuron_id = 0;
     for (std::vector<char *>::iterator iter = labels->begin();
             iter != labels->end(); iter++) {
         char *label = *iter;
+        fprintf(stderr, "Reading %s\n", label);
 
         // Get the port details
         ip_tag_info *tag = database->get_live_output_details(label);
-        ports_to_listen_to->push_back(tag->port);
+        ports_to_listen_to->insert(tag->port);
         free(tag);
 
         // Get the key to neuron id for this population and the colour

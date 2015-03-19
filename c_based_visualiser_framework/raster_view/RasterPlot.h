@@ -11,6 +11,7 @@
 #include "../glut_framework/GlutFramework.h"
 #include <map>
 #include <deque>
+#include <set>
 #include <pthread.h>
 
 using namespace glutFramework;
@@ -19,7 +20,7 @@ class RasterPlot : public GlutFramework {
 
 public:
     RasterPlot(int argc, char **argv, char *remote_host,
-            std::vector<int> *ports,
+            std::set<int> *ports,
             std::map<int, char*> *y_axis_labels,
             std::map<int, int> *key_to_neuronid_map,
             std::map<int, struct colour> *neuron_id_to_colour_map,

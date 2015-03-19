@@ -22,7 +22,7 @@ using namespace glutFramework;
 using namespace std;
 
 RasterPlot::RasterPlot(int argc, char **argv, char *remote_host,
-                    std::vector<int> *ports,
+                    std::set<int> *ports,
                     map<int, char*> *y_axis_labels,
                     map<int, int> *key_to_neuronid_map,
                     map<int, colour> *neuron_id_to_colour_map,
@@ -49,7 +49,7 @@ RasterPlot::RasterPlot(int argc, char **argv, char *remote_host,
         exit(-1);
     }
 
-    for (std::vector<int>::iterator iter = ports->begin();
+    for (std::set<int>::iterator iter = ports->begin();
             iter != ports->end(); iter++) {
         int port = *iter;
         SocketQueuer *queuer = new SocketQueuer(port, remote_host);

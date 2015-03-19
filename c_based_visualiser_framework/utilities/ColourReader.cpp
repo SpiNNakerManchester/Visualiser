@@ -4,6 +4,8 @@
 #include <stdlib.h>
 
 ColourReader::ColourReader(char *path) {
+    this->labels = new std::vector<char *>();
+
     FILE *colour_fp = fopen(path, "r");
     if (colour_fp == NULL) {
         fprintf(stderr, "Colour file %s not found\n", path);
@@ -22,18 +24,13 @@ ColourReader::ColourReader(char *path) {
         colour.b = (float) b / 255.0;
         std::string key(pop_label);
         this->colour_map[key] = colour;
+        this->labels->push_back(pop_label);
     }
     fclose(colour_fp);
 }
 
 std::vector<char *> *ColourReader::get_labels() {
-    std::vector<char *> *labels = new std::vector<char *>();
-    for (std::map<std::string, colour>::iterator iter
-            = this->colour_map.begin(); iter != this->colour_map.end();
-            ++iter) {
-        labels->push_back((char *) iter->first.c_str());
-    }
-    return labels;
+    return this->labels;
 }
 
 colour ColourReader::get_colour(char *label) {

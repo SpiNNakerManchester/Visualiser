@@ -15,6 +15,7 @@ class ColourReader {
 
     private:
         std::map<std::string, colour> colour_map;
+        std::vector<char *> *labels;
 };
 
 #endif
