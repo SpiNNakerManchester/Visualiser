@@ -1,10 +1,3 @@
-/*
- * rasterplot.cpp
- *
- *  Created on: 2 Dec 2014
- *      Author: alan and Rowley
- */
-
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 #include <math.h>

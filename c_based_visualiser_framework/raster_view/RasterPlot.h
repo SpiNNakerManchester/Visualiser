@@ -1,10 +1,3 @@
-/*
- * rasterplot.h
- *
- *  Created on: 2 Dec 2014
- *      Author: alan
- */
-
 #ifndef RASTERPLOT_H_
 #define RASTERPLOT_H_
 #include "../utilities/DatabaseMessageConnection.h"

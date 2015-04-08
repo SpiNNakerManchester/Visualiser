@@ -1,10 +1,3 @@
-/*
- * Keyboard.h
- *
- *  Created on: 16 Dec 2014
- *      Author: stokesa6
- */
-
 #ifndef C_VIS_DATABASE_KEYBOARD_H_
 #define C_VIS_DATABASE_KEYBOARD_H_
 

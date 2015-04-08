@@ -1,10 +1,3 @@
-/*
- * socketqueuer.cpp
- *
- *  Created on: 3 Dec 2014
- *      Author: stokesa6
- */
-
 #include "SocketQueuer.h"
 #include <stdio.h>
 #include <cstdlib>

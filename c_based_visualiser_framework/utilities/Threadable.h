@@ -1,10 +1,3 @@
-/*
- * Threadable.h
- *
- *  Created on: 3 Dec 2014
- *      Author: stokesa6
- */
-
 #include <pthread.h>
 
 #ifndef C_VIS_DATABASE_THREADABLE_H_

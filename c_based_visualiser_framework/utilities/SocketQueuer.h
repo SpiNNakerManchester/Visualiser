@@ -1,10 +1,3 @@
-/*
- * socketqueuer.h
- *
- *  Created on: 3 Dec 2014
- *      Author: stokesa6
- */
-
 #include "Threadable.h"
 #include "EIEIOMessage.h"
 #include <deque>

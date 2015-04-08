@@ -1,10 +1,3 @@
-/*
- * databasereader.cpp
- *
- *  Created on: 2 Dec 2014
- *      Author: alan
- */
-
 #include "DatabaseReader.h"
 #include "colour.h"
 

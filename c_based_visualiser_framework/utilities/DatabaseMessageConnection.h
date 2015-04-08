@@ -1,9 +1,3 @@
-/*
- * UdpListener.h
- *
- *  Created on: 2 Dec 2014
- *      Author: alan
- */
 #include "EIEIOMessage.h"
 #ifndef WIN32
 #include <netdb.h>

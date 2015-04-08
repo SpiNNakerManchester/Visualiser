@@ -12,13 +12,6 @@
 #include "utilities/DatabaseMessageConnection.h"
 #include "raster_view/RasterPlot.h"
 
-/*
- * main.cpp
- *main entrnace to the vis
- *  Created on: 2 Dec 2014
- *      Author: alan and rowley
- */
-
 char* get_next_arg(int position, char **argv, int argc){
     if (position + 1 > argc){
         throw "missing a element";

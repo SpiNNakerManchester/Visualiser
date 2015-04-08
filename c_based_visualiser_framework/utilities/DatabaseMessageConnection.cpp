@@ -1,9 +1,3 @@
-/*
- * UdpListener.cpp
- *
- *  Created on: 2 Dec 2014
- *      Author: alan
- */
 #include "DatabaseMessageConnection.h"
 #include <stdio.h>
 #include <string.h>

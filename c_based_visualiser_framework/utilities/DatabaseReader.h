@@ -1,9 +1,3 @@
-/*
- * databasereader.h
- *
- *  Created on: 2 Dec 2014
- *      Author: alan
- */
 #include <map>
 #include <string>
 #include <vector>

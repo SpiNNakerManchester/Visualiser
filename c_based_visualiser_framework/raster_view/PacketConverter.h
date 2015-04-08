@@ -1,10 +1,3 @@
-/*
- * packetconverter.h
- *
- *  Created on: 16 Dec 2014
- *      Author: stokesa6
- */
-
 #include <deque>
 #include <pthread.h>
 #include <map>
