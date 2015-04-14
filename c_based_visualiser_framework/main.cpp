@@ -6,6 +6,7 @@
 #include <vector>
 #include <set>
 #include <string.h>
+#include <algorithm>
 #include "main.h"
 #include "utilities/DatabaseReader.h"
 #include "utilities/ColourReader.h"
@@ -100,16 +101,18 @@ int main(int argc, char **argv){
             new std::map<int, colour>();
     std::set<int> *ports_to_listen_to = new std::set<int>();
     int base_neuron_id = 0;
+
     for (std::vector<char *>::iterator iter = labels->begin();
             iter != labels->end(); iter++) {
         char *label = *iter;
         fprintf(stderr, "Reading %s\n", label);
 
-        // Get the port details
-        ip_tag_info *tag = database->get_live_output_details(label);
-        ports_to_listen_to->insert(tag->port);
-        free(tag);
+		// Get the port details
+		ip_tag_info *tag = database->get_live_output_details(label);
+		ports_to_listen_to->insert(tag->port);
+		free(tag);
 
+        fprintf(stderr, "Reading key neuron mapping");
         // Get the key to neuron id for this population and the colour
         std::map<int, int> *key_map =
             database->get_key_to_neuron_id_mapping(label);

@@ -43,10 +43,10 @@ std::vector<char *> *DatabaseReader::get_live_population_labels() {
         "SELECT pre_vertices.vertex_label"
         " FROM Partitionable_vertices as pre_vertices"
         " JOIN Partitionable_edges as edges"
-        " ON pre_vertices.partitionable_vertex_id == edges.pre_vertex"
+        " ON pre_vertices.vertex_id == edges.pre_vertex"
         " JOIN Partitionable_vertices as post_vertices"
         " ON edges.post_vertex = post_vertices.vertex_id"
-        " WHERE post_vertices.vertex_label == \"Monitor\"");
+        " WHERE post_vertices.vertex_label == \"LiveSpikeReceiver\"");
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
@@ -55,7 +55,8 @@ std::vector<char *> *DatabaseReader::get_live_population_labels() {
             char *label = get_column_string_copy(compiled_statment, 0);
             labels->push_back(label);
         }
-        free(sql);
+
+        //free(sql);
         return labels;
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
@@ -80,7 +81,7 @@ std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
             int key = sqlite3_column_int(compiled_statment, 1);
             (*key_to_neuron_id_map)[key] = neuron_id;
         }
-        free(sql);
+        //free(sql);
         return key_to_neuron_id_map;
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
@@ -105,7 +106,7 @@ std::map<int, int> *DatabaseReader::get_neuron_id_to_key_mapping(char* label) {
             int key = sqlite3_column_int(compiled_statment, 1);
             (*neuron_id_to_key_map)[neuron_id] = key;
         }
-        free(sql);
+        //free(sql);
         return neuron_id_to_key_map;
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
@@ -127,11 +128,11 @@ ip_tag_info *DatabaseReader::get_live_output_details(char *label) {
         " JOIN Partitionable_vertices as pre_vertices"
         " ON edges.pre_vertex == pre_vertices.vertex_id"
         " WHERE pre_vertices.vertex_label == \"%q\""
-        " AND post_vertices.vertex_label == \"Monitor\"", label);
+        " AND post_vertices.vertex_label == \"LiveSpikeReceiver\"", label);
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
-        free(sql);
+        //free(sql);
         if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
             ip_tag_info *tag_info = (ip_tag_info *) malloc(sizeof(ip_tag_info));
             tag_info->ip_address = get_column_string_copy(compiled_statment, 0);
@@ -161,7 +162,7 @@ reverse_ip_tag_info *DatabaseReader::get_live_input_details(char *label) {
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
-        free(sql);
+        //free(sql);
         if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
             reverse_ip_tag_info *tag_info =
                 (reverse_ip_tag_info *) malloc(sizeof(reverse_ip_tag_info));
@@ -187,7 +188,7 @@ int DatabaseReader::get_n_neurons(char *label) {
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
-        free(sql);
+        //free(sql);
         if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
             return sqlite3_column_int(compiled_statment, 0);
         }
@@ -208,7 +209,7 @@ float DatabaseReader::get_configuration_parameter_value(char *parameter_name) {
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
-        free(sql);
+        //free(sql);
         if (sqlite3_step(compiled_statment) == SQLITE_ROW) {
             return sqlite3_column_double(compiled_statment, 0);
         }

@@ -45,6 +45,7 @@ RasterPlot::RasterPlot(int argc, char **argv, char *remote_host,
     for (std::set<int>::iterator iter = ports->begin();
             iter != ports->end(); iter++) {
         int port = *iter;
+        printf("listening to port %d", port);
         SocketQueuer *queuer = new SocketQueuer(port, remote_host);
         queuer->start();
         PacketConverter *translater = new PacketConverter(
