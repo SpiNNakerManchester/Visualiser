@@ -46,7 +46,7 @@ std::vector<char *> *DatabaseReader::get_live_population_labels() {
         " ON pre_vertices.vertex_id == edges.pre_vertex"
         " JOIN Partitionable_vertices as post_vertices"
         " ON edges.post_vertex = post_vertices.vertex_id"
-        " WHERE post_vertices.vertex_label == \"LiveSpikeReceiver\"");
+        " WHERE post_vertices.vertex_class == \"LivePacketGather\"");
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
@@ -128,7 +128,7 @@ ip_tag_info *DatabaseReader::get_live_output_details(char *label) {
         " JOIN Partitionable_vertices as pre_vertices"
         " ON edges.pre_vertex == pre_vertices.vertex_id"
         " WHERE pre_vertices.vertex_label == \"%q\""
-        " AND post_vertices.vertex_label == \"LiveSpikeReceiver\"", label);
+        " AND post_vertices.vertex_class == \"LivePacketGather\"", label);
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
