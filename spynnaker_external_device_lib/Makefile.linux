@@ -1,0 +1,12 @@
+OBJECTS = UDPConnection.o SpynnakerDatabaseConnection.o DatabaseReader.o SpynnakerLiveSpikesConnection.o
+   
+OBJS=$(OBJECTS:%=build/%)
+
+all: $(OBJS)
+
+build/%.o: %.cpp
+	-mkdir -p $(dir $@)
+	g++ -o $@ -c $<
+
+clean:
+	rm -rf build
