@@ -6,9 +6,10 @@
 *.pyc
 .idea
 /doc.source
-/build
+*/build
 /dist
 /Visualiser.egg-info
 *.o
 *.exe
 vis
+/.cproject
