@@ -10,6 +10,11 @@
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
 #define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
 #define close(sock)
+
+#define SHUT_RD   SD_RECEIVE
+#define SHUT_WR   SD_SEND
+#define SHUT_RDWR SD_BOTH
+
 typedef unsigned int uint;
 typedef unsigned short ushort;
 #endif
@@ -48,9 +53,9 @@ private:
     int sock;
     bool can_send;
     int local_port;
-    unsigned char *local_ip_address;
+    unsigned int local_ip_address;
     int remote_port;
-    unsigned char *remote_ip_address;
+    unsigned int remote_ip_address;
 };
 
 #endif // _UDP_CONNECTION_H_

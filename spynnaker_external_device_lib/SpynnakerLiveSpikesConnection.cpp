@@ -38,6 +38,8 @@ void SpynnakerLiveSpikesConnection::add_start_callback(
 
 void SpynnakerLiveSpikesConnection::read_database_callback(
         DatabaseReader *reader) {
+
+    // get input data
     for (int i = 0; i < this->send_labels.size(); i++) {
         char *send_label = this->send_labels[i];
         std::string send_label_str(send_label);
@@ -52,7 +54,7 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
     }
 
     std::set<int> ports_in_use;
-
+    // get output data
     for (int i = 0; i < this->receive_labels.size(); i++) {
         char *receive_label = this->receive_labels[i];
         std::string receive_label_str(receive_label);
@@ -73,7 +75,7 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
         }
 
         free(send_info);
-
+        // get key to neuron mapping for reciever translation
         std::map<int, int> *key_map = reader->get_key_to_neuron_id_mapping(
             receive_label);
         for (std::map<int, int>::iterator iter = key_map->begin();
@@ -171,4 +173,54 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
                 (char *) label.c_str(), time, spikes->size(), &((*spikes)[0]));
         }
     }
+}
+
+void SpynnakerLiveSpikesConnection::send_spikes(
+    char*label, std::vector<int> * neuron_ids, bool send_full_keys){
+
+    // figure max spikes size for each message
+    int max_keys = _MAX_HALF_KEYS_PER_PACKET;
+    if (send_full_keys) {
+        max_keys = _MAX_FULL_KEYS_PER_PACKET;
+    }
+
+    // iterate till all spikes have been consumed
+    int pos = 0;
+    while (pos < neuron_ids.size()) {
+
+        EIEIOHeader header = NULL
+        if (send_full_keys) {
+            EIEIOHeader header = EIEIOHeader(0, 0, 0, 0, EIEIOType.KEY_32_BIT,
+                                             spikes_in_packet);
+        }
+        else {
+            EIEIOHeader header = EIEIOHeader(0, 0, 0, 0, EIEIOType.KEY_16_BIT,
+                                             spikes_in_packet);
+        }
+        EIEIOMessage message = EIEIOMessage(header);
+
+        int spikes_in_packet = 0;
+
+        // iterate till packet has been filled, or all spikes are consumed
+        while (pos < neuron_ids.size && spikes_in_packet < max_keys) {
+            int key = neuron_ids[pos];
+            if (send_full_keys) {
+                key = this->neuron_id_to_key_maps[label][neuron_ids];
+            }
+            message.add_key(key);
+            pos += 1;
+            spikes_in_packet += 1;
+        }
+
+        //locate socket details for where to send this to
+        this->send_data_to(message.get_data(), message.get_length(),
+                           this->send_address_details[std::string(label)])
+    }
+}
+
+void SpynnakerLiveSpikesConnection::send_spike(
+    char* label, int neuron_id, bool send_full_keys) {
+        // build a vector for the neuron_id, then call send spikes.
+        std::vector<int> neuron_ids = (1, neuron_id);
+        send_spikes(label, *neuron_ids, send_full_keys);
 }
