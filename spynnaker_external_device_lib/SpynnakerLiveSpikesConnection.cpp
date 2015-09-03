@@ -1,7 +1,9 @@
 #include "SpynnakerLiveSpikesConnection.h"
 #include "ConnectionListener.h"
-
+#include "EIEIOMessage.h"
+#include <stddef.h>
 #include <set>
+#include <stdlib.h>
 
 SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         int n_receive_labels, char **receive_labels,
@@ -65,7 +67,8 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
             std::set<int>::iterator value = ports_in_use.find(send_info->port);
             if (value == ports_in_use.end()) {
                 UDPConnection *connection = new UDPConnection(send_info->port);
-                ConnectionListener *listener = new ConnectionListener(connection);
+                ConnectionListener *listener =
+                    new ConnectionListener(connection);
                 listener->add_receive_packet_callback(this);
                 listener->start();
                 ports_in_use.insert(send_info->port);
@@ -123,7 +126,6 @@ void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
         (struct start_callback_info *) start_info;
     start_callback_info->start_callback->spikes_start(
         start_callback_info->label, start_callback_info->connection);
-
     return NULL;
 }
 
@@ -135,9 +137,9 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
 
     std::map<std::pair<int, std::string>, std::vector<int> *> key_times_labels;
     while (message->is_next_element()) {
-        EIEIOElement *element = message->get_next_element();
-        int time = element->get_payload();
-        int key = element->get_key();
+        EIEIOElement element = message->get_next_element();
+        int time = element.get_payload();
+        int key = element.get_key();
 
         std::map<int, struct label_and_neuron_id *>::iterator value =
             this->key_to_neuron_id_and_label_map.find(key);
@@ -176,7 +178,7 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
 }
 
 void SpynnakerLiveSpikesConnection::send_spikes(
-    char*label, std::vector<int> * neuron_ids, bool send_full_keys){
+    char *label, std::vector<int> neuron_ids, bool send_full_keys){
 
     // figure max spikes size for each message
     int max_keys = _MAX_HALF_KEYS_PER_PACKET;
@@ -188,24 +190,32 @@ void SpynnakerLiveSpikesConnection::send_spikes(
     int pos = 0;
     while (pos < neuron_ids.size()) {
 
-        EIEIOHeader header = NULL
+        EIEIOHeader * header;
         if (send_full_keys) {
-            EIEIOHeader header = EIEIOHeader(0, 0, 0, 0, EIEIOType.KEY_32_BIT,
-                                             spikes_in_packet);
+            EIEIOType type = KEY_32_BIT;
+            EIEIOHeader* eieio_header =
+                new EIEIOHeader(0, 0, 0, 0, type, 0, 0, 0);
+            header = eieio_header;
         }
         else {
-            EIEIOHeader header = EIEIOHeader(0, 0, 0, 0, EIEIOType.KEY_16_BIT,
-                                             spikes_in_packet);
+            EIEIOType type = KEY_16_BIT;
+            EIEIOHeader* eieio_header =
+                new EIEIOHeader(0, 0, 0, 0, type, 0, 0, 0);
+            header = eieio_header;
         }
         EIEIOMessage message = EIEIOMessage(header);
 
         int spikes_in_packet = 0;
 
         // iterate till packet has been filled, or all spikes are consumed
-        while (pos < neuron_ids.size && spikes_in_packet < max_keys) {
-            int key = neuron_ids[pos];
+        while (pos < sizeof(neuron_ids) && spikes_in_packet < max_keys) {
+            int key;
             if (send_full_keys) {
-                key = this->neuron_id_to_key_maps[label][neuron_ids];
+                std::map<int, int> * map = this->neuron_id_to_key_maps[label];
+                key = (*map)[neuron_ids[pos]];
+            }
+            else{
+                key = neuron_ids[pos];
             }
             message.add_key(key);
             pos += 1;
@@ -213,14 +223,18 @@ void SpynnakerLiveSpikesConnection::send_spikes(
         }
 
         //locate socket details for where to send this to
-        this->send_data_to(message.get_data(), message.get_length(),
-                           this->send_address_details[std::string(label)])
+        unsigned char * data = (unsigned char *) malloc(message.get_max_size());
+        int size = message.get_data(data);
+        this->send_data_to(data, size,
+                           this->send_address_details[std::string(label)]);
+        free(data);
     }
 }
 
 void SpynnakerLiveSpikesConnection::send_spike(
     char* label, int neuron_id, bool send_full_keys) {
         // build a vector for the neuron_id, then call send spikes.
-        std::vector<int> neuron_ids = (1, neuron_id);
-        send_spikes(label, *neuron_ids, send_full_keys);
+        std::vector<int> neuron_ids;
+        neuron_ids.push_back(neuron_id);
+        send_spikes(label, neuron_ids, send_full_keys);
 }

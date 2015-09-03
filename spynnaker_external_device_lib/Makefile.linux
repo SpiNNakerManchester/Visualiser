@@ -1,4 +1,9 @@
-OBJECTS = UDPConnection.o SpynnakerDatabaseConnection.o DatabaseReader.o SpynnakerLiveSpikesConnection.o
+OBJECTS = UDPConnection.o \
+          SpynnakerDatabaseConnection.o \
+          DatabaseReader.o \
+          SpynnakerLiveSpikesConnection.o \
+          EIEIOMessage.o \
+          ConnectionListener.o
    
 OBJS=$(OBJECTS:%=build/%)
 

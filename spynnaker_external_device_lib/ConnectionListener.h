@@ -1,6 +1,7 @@
 #include "UDPConnection.h"
 #include "Threadable.h"
 #include "EIEIOMessage.h"
+#include <set>
 
 #ifndef _CONNECTION_LISTENER_H_
 #define _CONNECTION_LISTENER_H_
@@ -16,9 +17,16 @@ public:
     ConnectionListener(UDPConnection *connection);
     void add_receive_packet_callback(
         PacketReceiveCallbackInterface *packet_callback);
+    void close();
 
 protected:
     void run();
+
+private:
+    UDPConnection* _connection;
+    bool _done;
+    unsigned char* data;
+    std::set<PacketReceiveCallbackInterface*> _callbacks;
 };
 
 #endif // _CONNECTION_LISTENER_H_
