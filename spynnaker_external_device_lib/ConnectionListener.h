@@ -9,7 +9,6 @@
 class PacketReceiveCallbackInterface {
 public:
     virtual void receive_packet_callback(EIEIOMessage *message) = 0;
-    virtual ~PacketReceiveCallbackInterface();
 };
 
 class ConnectionListener : public Threadable {

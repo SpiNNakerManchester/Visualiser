@@ -7,11 +7,15 @@ OBJECTS = UDPConnection.o \
    
 OBJS=$(OBJECTS:%=build/%)
 
-all: $(OBJS)
+all: libspynnaker_external_device_lib.a
 
 build/%.o: %.cpp
 	-mkdir -p $(dir $@)
 	g++ -o $@ -c $<
+
+libspynnaker_external_device_lib.a: $(OBJS)
+	$(RM) $@
+	$(AR) rcs $@ $(OBJS)
 
 clean:
 	rm -rf build

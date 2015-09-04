@@ -9,7 +9,8 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         int n_receive_labels, char **receive_labels,
         int n_send_labels, char **send_labels,
         char *local_host, int local_port)
-        : SpynnakerDatabaseConnection(this, this, local_host, local_port) {
+        : SpynnakerDatabaseConnection(this, this, local_host, local_port),
+          StartCallbackInterface(){
     for (int i = 0; i < n_receive_labels; i++) {
         std::string receive_label(receive_labels[i]);
         this->receive_labels.push_back(receive_labels[i]);
@@ -237,4 +238,8 @@ void SpynnakerLiveSpikesConnection::send_spike(
         std::vector<int> neuron_ids;
         neuron_ids.push_back(neuron_id);
         send_spikes(label, neuron_ids, send_full_keys);
+}
+
+SpynnakerLiveSpikesConnection::~SpynnakerLiveSpikesConnection(){
+    //Do nowt
 }

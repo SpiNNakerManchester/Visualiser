@@ -8,13 +8,11 @@
 class DatabaseCallbackInterface {
 public:
     virtual void read_database_callback(DatabaseReader *reader) = 0;
-    virtual ~DatabaseCallbackInterface();
 };
 
 class StartCallbackInterface {
 public:
-    virtual void start_callback();
-    virtual ~StartCallbackInterface();
+    virtual void start_callback() = 0;
 };
 
 class SpynnakerDatabaseConnection : public UDPConnection, private Threadable {

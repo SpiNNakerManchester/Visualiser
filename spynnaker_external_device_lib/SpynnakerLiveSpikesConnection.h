@@ -33,19 +33,17 @@ class SpikeReceiveCallbackInterface {
 public:
     virtual void receive_spikes(
         char *label, int time, int n_spikes, int* spikes) = 0;
-    virtual ~SpikeReceiveCallbackInterface();
 };
 
 class SpikesStartCallbackInterface {
 public:
     virtual void spikes_start(char *label,
-                              SpynnakerLiveSpikesConnection *connection);
-    virtual ~SpikesStartCallbackInterface();
+                              SpynnakerLiveSpikesConnection *connection) = 0;
 };
 
 class SpynnakerLiveSpikesConnection :
-        private SpynnakerDatabaseConnection, private DatabaseCallbackInterface,
-        private StartCallbackInterface, private PacketReceiveCallbackInterface {
+        public SpynnakerDatabaseConnection, public DatabaseCallbackInterface,
+        public StartCallbackInterface, public PacketReceiveCallbackInterface {
 public:
     SpynnakerLiveSpikesConnection(
         int n_receive_labels=0, char **receive_labels=NULL,
@@ -60,11 +58,9 @@ public:
     void send_spikes(
         char *label, std::vector<int> n_neuron_ids, bool send_full_keys=false);
     ~SpynnakerLiveSpikesConnection();
-
-protected:
-    void read_database_callback(DatabaseReader *reader);
-    void start_callback();
-    void receive_packet_callback(EIEIOMessage *message);
+    virtual void read_database_callback(DatabaseReader *reader);
+    virtual void start_callback();
+    virtual void receive_packet_callback(EIEIOMessage *message);
 
 private:
     static void *_call_start_callback(void *start_callback_info);
