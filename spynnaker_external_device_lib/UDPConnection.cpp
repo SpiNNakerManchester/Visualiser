@@ -29,7 +29,7 @@ UDPConnection::UDPConnection(
     local_address.sin_port = htons(local_port);
 
     if (bind(this->sock, (struct sockaddr *) &local_address,
-             sizeof(local_address) < 0)) {
+             sizeof(local_address)) < 0) {
         throw "Error binding to local address";
     }
 

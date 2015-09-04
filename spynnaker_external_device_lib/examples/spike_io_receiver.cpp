@@ -1,6 +1,7 @@
 #include "../SpynnakerLiveSpikesConnection.h"
 #include "receiver_interface.h"
 #include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, char **argv){
     try{
@@ -17,22 +18,12 @@ int main(int argc, char **argv){
         // register the callback with the SpynnakerLiveSpikesConnection
         connection.add_receive_callback((char*) receive_label1, receiver_callback);
         connection.add_receive_callback((char*) receive_label2, receiver_callback);
+
+        while(true){
+            sleep(1);
+        }
     }
     catch (char const* msg){
         printf("%s \n", msg);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

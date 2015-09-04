@@ -9,6 +9,7 @@ SpynnakerDatabaseConnection::SpynnakerDatabaseConnection(
         :UDPConnection(local_port, local_host) {
     this->database_callback = database_callback;
     this->start_callback = start_callback;
+    this->start();
 }
 
 void SpynnakerDatabaseConnection::run() {
