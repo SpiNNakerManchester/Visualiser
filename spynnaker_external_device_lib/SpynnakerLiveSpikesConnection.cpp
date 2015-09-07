@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <set>
 #include <stdlib.h>
+#include <stdio.h>
 
 SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         int n_receive_labels, char **receive_labels,
@@ -41,7 +42,6 @@ void SpynnakerLiveSpikesConnection::add_start_callback(
 
 void SpynnakerLiveSpikesConnection::read_database_callback(
         DatabaseReader *reader) {
-
     // get input data
     for (int i = 0; i < this->send_labels.size(); i++) {
         char *send_label = this->send_labels[i];
@@ -55,7 +55,6 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
         this->neuron_id_to_key_maps[send_label_str] =
             reader->get_neuron_id_to_key_mapping(send_label);
     }
-
     std::set<int> ports_in_use;
     // get output data
     for (int i = 0; i < this->receive_labels.size(); i++) {
@@ -132,15 +131,16 @@ void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
 
 void SpynnakerLiveSpikesConnection::receive_packet_callback(
         EIEIOMessage *message) {
+    printf("FUCKED UP BEFORE everything \n");
     if (!message->has_timestamps()) {
         throw "Only packets with a timestamp are considered";
     }
-
+    printf("FUCKED UP BEFORE iterating \n");
     std::map<std::pair<int, std::string>, std::vector<int> *> key_times_labels;
     while (message->is_next_element()) {
-        EIEIOElement element = message->get_next_element();
-        int time = element.get_payload();
-        int key = element.get_key();
+        EIEIOElement* element = message->get_next_element();
+        int time = element->get_payload();
+        int key = element->get_key();
 
         std::map<int, struct label_and_neuron_id *>::iterator value =
             this->key_to_neuron_id_and_label_map.find(key);
@@ -161,7 +161,7 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
             ids->push_back(item->neuron_id);
         }
     }
-
+    printf("FUCKED UP BEFORE iterating labels\n");
     for (std::map<std::pair<int, std::string>,
                   std::vector<int> *>::iterator iter =
                       key_times_labels.begin();
@@ -172,8 +172,10 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
             this->live_spike_callbacks[label];
         for (int i = 0; i < callbacks.size(); i++) {
             std::vector<int> *spikes = iter->second;
+            printf("FUCKED UP BEFORE calling callback \n");
             callbacks[i]->receive_spikes(
                 (char *) label.c_str(), time, spikes->size(), &((*spikes)[0]));
+            printf("FUCKED UP AFTER calling callback \n");
         }
     }
 }

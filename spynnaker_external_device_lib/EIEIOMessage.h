@@ -37,6 +37,7 @@ public:
     void increment_count();
     int get_prefix();
     int get_payload_prefix();
+    int get_timestamp();
     int get_size();
     static int get_max_size();
     int get_payload_bytes();
@@ -67,7 +68,7 @@ public:
     EIEIOMessage(EIEIOHeader* header);
     bool has_timestamps();
     bool is_next_element();
-    EIEIOElement get_next_element();
+    EIEIOElement* get_next_element();
     void add_key(int key);
     void add_key_and_payload(int key, int payload);
     int get_size();
@@ -76,7 +77,7 @@ public:
 
 private:
     EIEIOHeader* _header;
-    std::vector<EIEIOElement> _data;
+    std::vector<EIEIOElement*> _data;
     int _position_read;
 
     void read_in_16_key_payload_message(

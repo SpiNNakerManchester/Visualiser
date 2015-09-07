@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdexcept>
 #include <stdlib.h>
+#include <stdio.h>
 
 // EIEIO elements
 
@@ -73,6 +74,7 @@ EIEIOHeader::EIEIOHeader(
     this->_count = 0;
     this->_prefix = prefix;
     this->_payload_prefix = payload_prefix;
+    printf("new header with values: p = %d, f = %d, d = %d, t = %d, type = %d, tag = %d, ")
 }
 
 //creater from byte array
@@ -168,6 +170,15 @@ void EIEIOHeader::increment_count(){
     this->_count ++;
 }
 
+int EIEIOHeader::get_timestamp(){
+    if (this->_t == 1){
+        return this->_payload_prefix;
+    }
+    else{
+        throw "This message does not contain a time stamp";
+    }
+}
+
 int EIEIOHeader::get_key_bytes(){
     if (this->_type == KEY_16_BIT ||
             this->_type == KEY_PAYLOAD_16_BIT){
@@ -232,7 +243,9 @@ EIEIOMessage::EIEIOMessage(unsigned char *data, int offset) {
     offset = offset + header->get_size();
     EIEIOMessage* message = new EIEIOMessage(header);
 
-    for (int element_id; element_id < header->get_count(); element_id++) {
+    int element_id = 0;
+    int count = header->get_count();
+    while (element_id < count) {
         if (header->get_type() == KEY_PAYLOAD_16_BIT) {
             read_in_16_key_payload_message(message, offset, data);
             offset += 4;
@@ -242,6 +255,7 @@ EIEIOMessage::EIEIOMessage(unsigned char *data, int offset) {
             offset += 2;
         }
         else if ( header->get_type() == KEY_32_BIT) {
+            printf("element_id is %d \n", element_id);
             read_in_32_key_message(message, offset, data);
             offset += 4;
         }
@@ -249,6 +263,7 @@ EIEIOMessage::EIEIOMessage(unsigned char *data, int offset) {
            read_in_32_key_payload_message(message, offset, data);
            offset += 8;
         }
+        element_id+=1;
     }
 }
 
@@ -265,14 +280,24 @@ void EIEIOMessage::read_in_16_key_payload_message(
 void EIEIOMessage::read_in_16_key_message(
         EIEIOMessage* message, int offset, unsigned char * data){
     int key = read_element(offset, data, 2);
-    message->add_key(key);
+    if (this->header->get_t == 1){
+        message->add_key_and_payload(key, this->header->get_timestamp());
+    }
+    else{
+        message->add_key(key);
+    }
 }
 
 //! \brief reads in a EIEIO element from the data with 32 bit key.
 void EIEIOMessage::read_in_32_key_message(
         EIEIOMessage* message, int offset, unsigned char * data){
     int key = read_element(offset, data, 4);
-    message->add_key(key);
+    if (this->header->get_t == 1){
+        message->add_key_and_payload(key, this->header->get_timestamp());
+    }
+    else {
+        message->add_key(key);
+    }
 }
 
 //! \brief reads in a EIEIO element from the data with 32 bit key and
@@ -319,7 +344,7 @@ bool EIEIOMessage::is_next_element(){
 }
 
 //! \biref gets the next element in the data
-EIEIOElement EIEIOMessage::get_next_element() {
+EIEIOElement* EIEIOMessage::get_next_element() {
     if (this->is_next_element()) {
         _position_read ++;
         return this->_data[this->_position_read - 1];
@@ -331,14 +356,14 @@ EIEIOElement EIEIOMessage::get_next_element() {
 
 //! \biref adds a key to the data object
 void EIEIOMessage::add_key(int key){
-    EIEIOElement element = EIEIOElement(key);
+    EIEIOElement* element = new EIEIOElement(key);
     this->_data.push_back(element);
     this->_header->increment_count();
 }
 
 //! \biref adds a key and payload to the data object
 void EIEIOMessage::add_key_and_payload(int key, int payload){
-    EIEIOElement element = EIEIOElement(key, payload);
+    EIEIOElement* element = new EIEIOElement(key, payload);
     this->_data.push_back(element);
     this->_header->increment_count();
 }
@@ -366,7 +391,7 @@ int EIEIOMessage::get_data(unsigned char * data){
     int offset = 0;
     offset = this->_header->convert_to_bytes(data, offset);
     for(int position = 0; position < this->_data.size(); position ++) {
-        offset = this->_data[position].convert_to_bytes(data, offset);
+        offset = this->_data[position]->convert_to_bytes(data, offset);
     }
     return offset;
 }

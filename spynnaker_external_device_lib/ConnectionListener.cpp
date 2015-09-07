@@ -1,5 +1,6 @@
 #include "ConnectionListener.h"
 #include <iostream>
+#include <stdio.h>
 
 ConnectionListener::ConnectionListener(UDPConnection* connection){
     this->_connection = connection;
@@ -13,15 +14,17 @@ void ConnectionListener::run(){
                 this->data, EIEIOMessage::get_max_size());
             EIEIOMessage* message = new EIEIOMessage(this->data, 0);
             // send message to receiver
+            printf("FUCKED UP BEFORE sending to callback \n");
             std::set<PacketReceiveCallbackInterface*>::iterator iterator;
             for (iterator = this->_callbacks.begin();
                     iterator != this->_callbacks.end(); ++iterator){
-
                  (*iterator)->receive_packet_callback(message);
             }
+            printf("FUCKED UP BEFORE ending receive \n");
         }
         catch (std::exception& e){
             if (!this->_done){
+                printf("thrown a error \n");
                 std::cerr << "exception caught: " << e.what() << '\n';
             }
         }

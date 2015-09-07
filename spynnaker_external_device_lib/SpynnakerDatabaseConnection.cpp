@@ -1,5 +1,4 @@
 #include "SpynnakerDatabaseConnection.h"
-
 #define MAX_PACKET_SIZE 300
 
 SpynnakerDatabaseConnection::SpynnakerDatabaseConnection(
@@ -26,7 +25,6 @@ void SpynnakerDatabaseConnection::run() {
     DatabaseReader reader(database_path);
     this->database_callback->read_database_callback(&reader);
     reader.close_database_connection();
-
     // Send the notification back that the database has been read
     unsigned char eieio_response[2];
     eieio_response[1] = (1 << 6);
