@@ -263,6 +263,7 @@ EIEIOMessage::EIEIOMessage(unsigned char *data, int offset) {
         }
         element_id+=1;
     }
+    this->_position_read = 0;
 }
 
 //! \brief reads in a EIEIO element from the data with 16 bit key and
@@ -319,6 +320,7 @@ int EIEIOMessage::read_element(
 
 EIEIOMessage::EIEIOMessage(EIEIOHeader* header){
     this->_header = header;
+    this->_position_read = 0;
 }
 
 //! \brief converts header t into a boolean for easy use from message
