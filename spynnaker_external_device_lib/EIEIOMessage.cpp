@@ -74,7 +74,8 @@ EIEIOHeader::EIEIOHeader(
     this->_count = 0;
     this->_prefix = prefix;
     this->_payload_prefix = payload_prefix;
-    printf("new header with values: p = %d, f = %d, d = %d, t = %d, type = %d, tag = %d, ")
+    printf("new header with values: p = %d, f = %d, d = %d, t = %d, type = %d, tag = %d, count = %d, prefix = %d, payload_prefix = %d",
+           this->_p, this->_f, this->_d, this->_t, this->_type, this->_tag, this->_count, this->_prefix, this->_payload_prefix);
 }
 
 //creater from byte array
@@ -280,8 +281,8 @@ void EIEIOMessage::read_in_16_key_payload_message(
 void EIEIOMessage::read_in_16_key_message(
         EIEIOMessage* message, int offset, unsigned char * data){
     int key = read_element(offset, data, 2);
-    if (this->header->get_t == 1){
-        message->add_key_and_payload(key, this->header->get_timestamp());
+    if (this->_header->get_t == 1) {
+        message->add_key_and_payload(key, this->_header->get_timestamp());
     }
     else{
         message->add_key(key);
@@ -292,8 +293,8 @@ void EIEIOMessage::read_in_16_key_message(
 void EIEIOMessage::read_in_32_key_message(
         EIEIOMessage* message, int offset, unsigned char * data){
     int key = read_element(offset, data, 4);
-    if (this->header->get_t == 1){
-        message->add_key_and_payload(key, this->header->get_timestamp());
+    if (this->_header->get_t == 1){
+        message->add_key_and_payload(key, this->_header->get_timestamp());
     }
     else {
         message->add_key(key);
