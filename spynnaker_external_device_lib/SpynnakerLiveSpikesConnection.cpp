@@ -131,7 +131,6 @@ void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
 
 void SpynnakerLiveSpikesConnection::receive_packet_callback(
         EIEIOMessage *message) {
-    printf("FUCKED UP BEFORE everything \n");
     if (!message->has_timestamps()) {
         throw "Only packets with a timestamp are considered";
     }
@@ -139,11 +138,13 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
     std::map<std::pair<int, std::string>, std::vector<int> *> key_times_labels;
     while (message->is_next_element()) {
         EIEIOElement* element = message->get_next_element();
+        printf("FUCKED UP after getting next element \n");
         int time = element->get_payload();
         int key = element->get_key();
-
+        printf("FUCKED UP BEFORE getting keys and times \n");
         std::map<int, struct label_and_neuron_id *>::iterator value =
             this->key_to_neuron_id_and_label_map.find(key);
+        printf("FUCKED UP BEFORE getting key_to_neuron_id_and_label_map\n");
         if (value != this->key_to_neuron_id_and_label_map.end()) {
             struct label_and_neuron_id *item = value->second;
             std::pair<int, std::string> key_time(key, std::string(item->label));
@@ -157,7 +158,7 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
                 ids = new std::vector<int>();
                 key_times_labels[key_time] = ids;
             }
-
+            printf("FUCKED UP BEFORE pushing\n");
             ids->push_back(item->neuron_id);
         }
     }

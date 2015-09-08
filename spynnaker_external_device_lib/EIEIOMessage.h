@@ -81,13 +81,13 @@ private:
     int _position_read;
 
     void read_in_16_key_payload_message(
-        EIEIOMessage* message, int offset, unsigned char * data);
+        int offset, unsigned char * data);
     void read_in_16_key_message(
-        EIEIOMessage* message, int offset, unsigned char * data);
+        int offset, unsigned char * data);
     void read_in_32_key_message(
-        EIEIOMessage* message, int offset, unsigned char * data);
+        int offset, unsigned char * data);
     void read_in_32_key_payload_message(
-        EIEIOMessage* message, int offset, unsigned char * data);
+        int offset, unsigned char * data);
     int read_element(int offset, unsigned char * data,
                      int number_bytes_to_read);
 };

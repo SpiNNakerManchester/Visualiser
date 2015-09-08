@@ -7,7 +7,7 @@ all: receiver
 
 build/%.o: %.cpp
 	-mkdir -p $(dir $@)
-	g++ -o $@ -c $<
+	g++ -g -o $@ -c $<
 
 receiver: $(OBJS)
 	g++ -L.. -o $@ $^  -lspynnaker_external_device_lib -lGL -lGLU -lglut -lpthread -lsqlite3
