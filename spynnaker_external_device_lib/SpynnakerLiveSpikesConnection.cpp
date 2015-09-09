@@ -134,17 +134,13 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
     if (!message->has_timestamps()) {
         throw "Only packets with a timestamp are considered";
     }
-    printf("FUCKED UP BEFORE iterating \n");
     std::map<std::pair<int, std::string>, std::vector<int> *> key_times_labels;
     while (message->is_next_element()) {
         EIEIOElement* element = message->get_next_element();
-        printf("FUCKED UP after getting next element \n");
         int time = element->get_payload();
         int key = element->get_key();
-        printf("FUCKED UP BEFORE getting keys and times \n");
         std::map<int, struct label_and_neuron_id *>::iterator value =
             this->key_to_neuron_id_and_label_map.find(key);
-        printf("FUCKED UP BEFORE getting key_to_neuron_id_and_label_map\n");
         if (value != this->key_to_neuron_id_and_label_map.end()) {
             struct label_and_neuron_id *item = value->second;
             std::pair<int, std::string> key_time(key, std::string(item->label));
@@ -158,11 +154,9 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
                 ids = new std::vector<int>();
                 key_times_labels[key_time] = ids;
             }
-            printf("FUCKED UP BEFORE pushing\n");
             ids->push_back(item->neuron_id);
         }
     }
-    printf("FUCKED UP BEFORE iterating labels\n");
     for (std::map<std::pair<int, std::string>,
                   std::vector<int> *>::iterator iter =
                       key_times_labels.begin();
@@ -173,10 +167,8 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
             this->live_spike_callbacks[label];
         for (int i = 0; i < callbacks.size(); i++) {
             std::vector<int> *spikes = iter->second;
-            printf("FUCKED UP BEFORE calling callback \n");
             callbacks[i]->receive_spikes(
                 (char *) label.c_str(), time, spikes->size(), &((*spikes)[0]));
-            printf("FUCKED UP AFTER calling callback \n");
         }
     }
 }
@@ -222,6 +214,7 @@ void SpynnakerLiveSpikesConnection::send_spikes(
                 key = neuron_ids[pos];
             }
             message.add_key(key);
+            message.increment_count();
             pos += 1;
             spikes_in_packet += 1;
         }

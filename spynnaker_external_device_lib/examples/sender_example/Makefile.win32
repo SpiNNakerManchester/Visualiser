@@ -1,0 +1,13 @@
+OBJECTS = spike_io_sender.o
+          sender_callback.o
+
+OBJS=$(OBJECTS:%=build/%)
+
+all: $(OBJS)
+
+build/%.o: %.cpp
+	-mkdir -p $(dir $@)
+	g++ -D FREEGLUT_STATIC -D WINVER=0x501 -D WIN32_LEAN_AND_MEAN -fpermissive -o $@ -c $<
+
+clean:
+	rm -rf build

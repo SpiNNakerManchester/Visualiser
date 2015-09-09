@@ -72,44 +72,36 @@ UDPConnection::UDPConnection(
 }
 
 int UDPConnection::receive_data(unsigned char *data, int length) {
-    printf("UDP before receive data \n");
     int received_length = recv(this->sock, (char *) data, length, 0);
     if (received_length < 0) {
         throw "Error receiving data";
     }
-    printf("UDP after receive data \n");
     return received_length;
 }
 
 int UDPConnection::receive_data_with_address(unsigned char *data, int length,
                                              struct sockaddr *address) {
-    printf("UDP before receive data with address \n");
     int address_length = sizeof(*address);
     int received_length = recvfrom(this->sock, (char *) data, length, 0,
                                    address, (socklen_t *) &address_length);
     if (received_length < 0) {
         throw "Error receiving data";
     }
-    printf("UDP after receive data with address \n");
     return received_length;
 }
 
 void UDPConnection::send_data(unsigned char *data, int length) {
-    printf("UDP before send data \n");
     if (send(this->sock, (const char *) data, length, 0) < 0) {
         throw "Error sending data";
     }
-    printf("UDP after send data \n");
 }
 
 void UDPConnection::send_data_to(unsigned char *data, int length,
                                  sockaddr* address) {
-    printf("UDP before send data to \n");
     if (sendto(this->sock, (const char *) data, length, 0,
                (const struct sockaddr *) address, sizeof(*address)) < 0) {
         throw "Error sending data";
     }
-    printf("UDP after send data to \n");
 }
 
 UDPConnection::~UDPConnection() {

@@ -333,6 +333,11 @@ bool EIEIOMessage::has_timestamps(){
     }
 }
 
+//! \brief adds one to the header
+void EIEIOMessage::increment_count(){
+    this->_header->increment_count();
+}
+
 //! \brief helper for seeing if theres still elements in the list to read
 bool EIEIOMessage::is_next_element(){
     if (this->_position_read == this->_header->get_count()){
@@ -358,14 +363,12 @@ EIEIOElement* EIEIOMessage::get_next_element() {
 void EIEIOMessage::add_key(int key){
     EIEIOElement* element = new EIEIOElement(key);
     this->_data.push_back(element);
-    this->_header->increment_count();
 }
 
 //! \biref adds a key and payload to the data object
 void EIEIOMessage::add_key_and_payload(int key, int payload){
     EIEIOElement* element = new EIEIOElement(key, payload);
     this->_data.push_back(element);
-    this->_header->increment_count();
 }
 
 //! \biref gets the size of the eieio message in bytes

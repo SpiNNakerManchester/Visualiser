@@ -72,6 +72,7 @@ public:
     void add_key(int key);
     void add_key_and_payload(int key, int payload);
     int get_size();
+    void increment_count();
     static int get_max_size();
     int get_data(unsigned char* data);
 
