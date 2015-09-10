@@ -10,9 +10,11 @@
 int main(int argc, char **argv){
     try{
         // set up basic stuff
+        char const* send_label1 = "spike_injector_forward";
+        char const* send_label2 = "spike_injector_backward";
+        char* send_labels[2] = {(char *) send_label1, (char*) send_label2};
         char const* label1 = "pop_forward";
         char const* label2 = "pop_backward";
-        char* send_labels[2] = {(char *) label1, (char*) label2};
         char* receive_labels[2] = {(char *) label1, (char*) label2};
         char const* local_host = NULL;
         SpynnakerLiveSpikesConnection connection =
@@ -33,9 +35,9 @@ int main(int argc, char **argv){
             (char*) label2, receiver_callback);
 
         // register the callback with the SpynnakerLiveSpikesConnection
-        connection.add_start_callback((char *) label1,
+        connection.add_start_callback((char *) send_label1,
                                       sender_callback_forward);
-        connection.add_start_callback((char *) label2,
+        connection.add_start_callback((char *) send_label2,
                                       sender_callback_backward);
 
         while(true){

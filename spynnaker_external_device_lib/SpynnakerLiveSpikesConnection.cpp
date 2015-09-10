@@ -112,11 +112,11 @@ void SpynnakerLiveSpikesConnection::start_callback() {
             iter != this->start_callbacks.end(); iter++) {
         for (int i = 0; i < iter->second.size(); i++) {
             pthread_t callback_thread;
-            struct start_callback_info start_info(
+            struct start_callback_info *start_info = new struct start_callback_info(
                 iter->second[i], (char *) iter->first.c_str(), this);
             pthread_create(
                 &callback_thread, NULL, _call_start_callback,
-                (void *) &start_info);
+                (void *) start_info);
         }
     }
 }
