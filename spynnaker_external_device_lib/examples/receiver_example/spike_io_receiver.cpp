@@ -1,4 +1,4 @@
-#include "../SpynnakerLiveSpikesConnection.h"
+#include "../../SpynnakerLiveSpikesConnection.h"
 #include "receiver_interface.h"
 #include <stdio.h>
 #include <unistd.h>

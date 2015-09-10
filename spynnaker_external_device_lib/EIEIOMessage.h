@@ -59,6 +59,8 @@ private:
     int _count;
     int _prefix;
     int _payload_prefix;
+    static int read_element(int offset, unsigned char * data,
+                            int number_bytes_to_read);
 };
 
 // eieio message

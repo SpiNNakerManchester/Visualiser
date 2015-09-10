@@ -1,15 +1,17 @@
-OBJECTS = spike_io_receiver.o \
+OBJECTS = spike_io_sender_receiver.o \
+          sender_interface_forward.o \
+          sender_interface_backward.o \
           receiver_interface.o
 
 OBJS=$(OBJECTS:%=build/%)
 
-all: receiver
+all: sender_receiver
 
 build/%.o: %.cpp
 	-mkdir -p $(dir $@)
 	g++ -g -o $@ -c $<
 
-receiver: $(OBJS)
+sender_receiver: $(OBJS)
 	g++ -L../.. -o $@ $^  -lspynnaker_external_device_lib -lGL -lGLU -lglut -lpthread -lsqlite3
 
 clean:

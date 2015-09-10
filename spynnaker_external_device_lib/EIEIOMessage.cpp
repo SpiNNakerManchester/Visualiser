@@ -116,11 +116,10 @@ EIEIOHeader* EIEIOHeader::create_from_byte_array(
                 eieio_type == KEY_PAYLOAD_32_BIT) {
             if (prefix_flag == 1){
                 prefix = (data[offset + 2] >> 8) & 0xFFFF;
-                payload_prefix = (((data[offset + 2] & 0xFFFF) << 8) +
-                                      (data[offset + 3] >> 8) & 0xFFFF);
+                payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
             }
             else {
-                payload_prefix = data[offset + 2];
+            	payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
             }
         }
     }
@@ -134,6 +133,16 @@ EIEIOHeader* EIEIOHeader::create_from_byte_array(
         prefix_flag, format_flag, payload_prefix_flag, payload_is_timestamp,
         eieio_type, tag, count, prefix, payload_prefix);
     return header;
+}
+
+//! \brief reads a number of bytes and converts them into a int
+int EIEIOHeader::read_element(
+        int offset, unsigned char * data, int number_bytes_to_read){
+    int final_data = 0;
+    for (int position = 0; position < number_bytes_to_read; position++){
+        final_data += (data[(offset + position)] << (position * 8));
+    }
+    return final_data;
 }
 
 // getters

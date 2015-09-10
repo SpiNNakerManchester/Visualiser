@@ -143,16 +143,16 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
             this->key_to_neuron_id_and_label_map.find(key);
         if (value != this->key_to_neuron_id_and_label_map.end()) {
             struct label_and_neuron_id *item = value->second;
-            std::pair<int, std::string> key_time(key, std::string(item->label));
+            std::pair<int, std::string> time_label(time, std::string(item->label));
             std::map<std::pair<int, std::string>,
                      std::vector<int> *>::iterator key_times_labels_item =
-                         key_times_labels.find(key_time);
+                         key_times_labels.find(time_label);
             std::vector<int> *ids = NULL;
             if (key_times_labels_item != key_times_labels.end()) {
                 ids = key_times_labels_item->second;
             } else {
                 ids = new std::vector<int>();
-                key_times_labels[key_time] = ids;
+                key_times_labels[time_label] = ids;
             }
             ids->push_back(item->neuron_id);
         }
