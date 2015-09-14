@@ -20,6 +20,7 @@ typedef unsigned short ushort;
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 static inline struct sockaddr *get_address(char *ip_address, int port) {
     struct hostent *lookup_address = gethostbyname(ip_address);
