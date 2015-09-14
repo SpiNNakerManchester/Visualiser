@@ -19,15 +19,18 @@ int main(int argc, char **argv){
         char const* local_host = NULL;
         SpynnakerLiveSpikesConnection connection =
             SpynnakerLiveSpikesConnection(
-                2, receive_labels, 2, send_labels, (char*) local_host, 19996);
+                2, receive_labels, 2, send_labels, (char*) local_host, 19999);
         // build the SpikeReceiveCallbackInterface
-        pthread_mutex_t* count_mutex;
-        SenderInterfaceForward* sender_callback_forward =
-            new SenderInterfaceForward(count_mutex);
-        SenderInterfaceBackward* sender_callback_backward =
-            new SenderInterfaceBackward(count_mutex);
+        pthread_mutex_t count_mutex;
+        pthread_mutex_init(&count_mutex, NULL);
 
-        ReceiverInterface* receiver_callback = new ReceiverInterface();
+        SenderInterfaceForward* sender_callback_forward =
+            new SenderInterfaceForward(&count_mutex);
+        SenderInterfaceBackward* sender_callback_backward =
+            new SenderInterfaceBackward(&count_mutex);
+
+        ReceiverInterface* receiver_callback =
+            new ReceiverInterface(&count_mutex);
         // register the callback with the SpynnakerLiveSpikesConnection
         connection.add_receive_callback(
             (char*) label1, receiver_callback);
