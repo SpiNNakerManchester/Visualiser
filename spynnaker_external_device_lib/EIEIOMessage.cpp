@@ -33,16 +33,40 @@ bool EIEIOElement::has_payload() {
 }
 
 //! \brief converts eieieo elment into bytes for transmission via sockets
-int EIEIOElement::convert_to_bytes(unsigned char* data, int offset) {
+int EIEIOElement::convert_to_bytes(unsigned char* data, int offset, int format) {
+    if (format == KEY_16_BIT || format == KEY_PAYLOAD_16_BIT){
+        data[offset] = (unsigned char) (this->_key & 0xFFFF);
+        data[offset + 1] = (unsigned char) ((this->_key >> 8) & 0xFFFF);
+        offset += 2;
+    }
+    else if (format == KEY_32_BIT || format == KEY_PAYLOAD_32_BIT){
+        data[offset] = (unsigned char) (this->_key & 0xFFFF);
+        data[offset + 1] = (unsigned char) ((this->_key >> 8) & 0xFFFF);
+        data[offset + 2] = (unsigned char) ((this->_key >> 16) & 0xFFFF);
+        data[offset + 3] = (unsigned char) ((this->_key >> 24) & 0xFFFF);
+        offset += 4;
+    }
+    else {
+        throw "Invalid format type, please fix and try again";
+    }
     if (this->_has_payload){
-        data[offset] = (unsigned char) this->_key;
-        data[offset + 1] = (unsigned char) this->_payload;
-        return offset += 2;
+        if (format == KEY_PAYLOAD_16_BIT){
+            data[offset] = (unsigned char) (this->_payload & 0xFFFF);
+            data[offset + 1] = (unsigned char) ((this->_payload >> 8) & 0xFFFF);
+            offset += 2;
+        }
+        else if (format == KEY_PAYLOAD_32_BIT){
+           data[offset] = (unsigned char) (this->_payload & 0xFFFF);
+            data[offset + 1] = (unsigned char) ((this->_payload >> 8) & 0xFFFF);
+            data[offset + 2] = (unsigned char) ((this->_payload >> 16) & 0xFFFF);
+            data[offset + 3] = (unsigned char) ((this->_payload >> 24) & 0xFFFF);
+            offset += 4;
+        }
+        else{
+            throw "Invalid format type, please fix and try again";
+        }
     }
-    else{
-        data[offset] = (unsigned char) this->_key;
-        return offset += 1;
-    }
+    return offset;
 }
 
 /////////////////// eieio header bits
@@ -403,7 +427,8 @@ int EIEIOMessage::get_data(unsigned char * data){
     int offset = 0;
     offset = this->_header->convert_to_bytes(data, offset);
     for(int position = 0; position < this->_data.size(); position ++) {
-        offset = this->_data[position]->convert_to_bytes(data, offset);
+        offset = this->_data[position]->convert_to_bytes(
+            data, offset, this->_header->get_type());
     }
     return offset;
 }

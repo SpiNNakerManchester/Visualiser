@@ -14,7 +14,7 @@ public:
     int get_key();
     bool has_payload();
     int get_payload();
-    int convert_to_bytes(unsigned char * data, int offset);
+    int convert_to_bytes(unsigned char * data, int offset, int format);
     EIEIOElement(int key);
     EIEIOElement(int key, int payload);
 
