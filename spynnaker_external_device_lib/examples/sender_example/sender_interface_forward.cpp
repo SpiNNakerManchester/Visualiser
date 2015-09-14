@@ -4,6 +4,9 @@
 #include <time.h>
 #include <stdlib.h>
 #include <pthread.h>
+#ifdef WIN32
+#define sleep(n) Sleep(n)
+#endif
 
 
 SenderInterfaceForward::SenderInterfaceForward(pthread_mutex_t *cond){

@@ -34,7 +34,7 @@ void ConnectionListener::add_receive_packet_callback(
     this->_callbacks.insert(packet_callback);
 }
 
-void ConnectionListener::close(){
+void ConnectionListener::finish() {
     this->_done = true;
     free(this->data);
 }

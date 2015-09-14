@@ -7,6 +7,16 @@
 UDPConnection::UDPConnection(
         int local_port, char *local_host, int remote_port, char *remote_host) {
 
+#ifdef WIN32
+    WSADATA wsaData; // if this doesn't work
+    //WSAData wsaData; // then try this instead
+
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0) {
+        fprintf(stderr, "WSAStartup failed.\n");
+        exit(1);
+    }
+#endif
+
     this->sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (this->sock == 0) {
         throw "Socket could not be created";

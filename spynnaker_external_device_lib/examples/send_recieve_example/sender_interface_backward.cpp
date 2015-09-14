@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
+#ifdef WIN32
+#define sleep(n) Sleep(n)
+#endif
 
 
 SenderInterfaceBackward::SenderInterfaceBackward(pthread_mutex_t *cond){

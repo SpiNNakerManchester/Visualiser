@@ -2,6 +2,9 @@
 #include "receiver_interface.h"
 #include <stdio.h>
 #include <unistd.h>
+#ifdef WIN32
+#define sleep(n) Sleep(n)
+#endif
 
 int main(int argc, char **argv){
     try{
