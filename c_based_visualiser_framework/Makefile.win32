@@ -13,7 +13,7 @@ OBJECTS = utilities/ColourReader.o \
 OBJS=$(OBJECTS:%=build/%)
 
 vis.exe: $(OBJS)
-	g++ -o $@ $^ -lfreeglut_static -lopengl32 -lwinmm -lgdi32 -lglu32 -lpthread -lws2_32 -lsqlite3
+	g++ -o $@ $^ -static-libgcc -static-libstdc++ -lfreeglut_static -lopengl32 -lwinmm -lgdi32 -lglu32 -lpthread -lws2_32 -lsqlite3
 
 build/%.o: %.cpp
 	-mkdir -p $(dir $@)
