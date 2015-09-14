@@ -204,7 +204,7 @@ void SpynnakerLiveSpikesConnection::send_spikes(
         int spikes_in_packet = 0;
 
         // iterate till packet has been filled, or all spikes are consumed
-        while (pos < sizeof(neuron_ids) && spikes_in_packet < max_keys) {
+        while (pos < neuron_ids.size() && spikes_in_packet < max_keys) {
             int key;
             if (send_full_keys) {
                 std::map<int, int> * map = this->neuron_id_to_key_maps[label];

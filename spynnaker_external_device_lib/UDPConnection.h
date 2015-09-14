@@ -29,7 +29,8 @@ static inline struct sockaddr *get_address(char *ip_address, int port) {
     struct sockaddr_in *local_address =
         (struct sockaddr_in *) malloc(sizeof(struct sockaddr_in));
     local_address->sin_family = AF_INET;
-    local_address->sin_addr.s_addr = (u_long) lookup_address->h_addr;
+    memcpy(&(local_address->sin_addr.s_addr), lookup_address->h_addr,
+               lookup_address->h_length);
     local_address->sin_port = htons(port);
 
     return (struct sockaddr *) local_address;
