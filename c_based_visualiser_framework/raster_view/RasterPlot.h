@@ -1,25 +1,30 @@
 #ifndef RASTERPLOT_H_
 #define RASTERPLOT_H_
-#include "../utilities/DatabaseMessageConnection.h"
+
 #include "../glut_framework/GlutFramework.h"
+#include "../utilities/ColourReader.h"
+#include <SpynnakerLiveSpikesConnection.h>
 #include <map>
 #include <deque>
 #include <set>
 #include <pthread.h>
 
-using namespace glutFramework;
-
-class RasterPlot : public GlutFramework {
+class RasterPlot : public GlutFramework, public SpikeReceiveCallbackInterface,
+                   public SpikesStartCallbackInterface,
+                   public SpikeInitializeCallbackInterface {
 
 public:
-    RasterPlot(int argc, char **argv, char *remote_host,
-            std::set<int> *ports,
-            std::map<int, char*> *y_axis_labels,
-            std::map<int, int> *key_to_neuronid_map,
-            std::map<int, struct colour> *neuron_id_to_colour_map,
-            float plot_time_ms, float timestep_ms, int n_neurons,
-            DatabaseMessageConnection *database_message_connection);
+    RasterPlot(
+        int argc, char **argv, ColourReader *colour_reader, float ms_per_pixel);
     void init();
+    void main_loop();
+    virtual void init_population(
+        char *label, int n_neurons, float run_time_ms,
+        float machine_time_step_ms);
+    virtual void spikes_start(
+        char *label, SpynnakerLiveSpikesConnection *connection);
+    virtual void receive_spikes(
+        char *label, int time, int n_spikes, int* spikes);
     void display(float time);
     void reshape(int width, int height);
     void keyboardUp(unsigned char key, int x, int y);
@@ -38,20 +43,32 @@ private:
     const static int INIT_WINDOW_X = 100;
     const static int INIT_WINDOW_Y = 100;
 
+    ColourReader *colour_reader;
+    int argc;
+    char **argv;
+
     float plot_time_ms;
     float timestep_ms;
     int n_neurons;
     int window_width;
     int window_height;
+    float ms_per_pixel;
+    float latest_time;
 
     std::deque<std::pair<int, int> > points_to_draw;
     pthread_mutex_t point_mutex;
 
-    std::map<int, struct colour> *neuron_id_to_colour_map;
-    std::map<int, int> *key_to_neuronid_map;
-    std::map<int, char*> *y_axis_labels;
+    int base_pos;
+    std::map<std::string, int> label_to_base_pos_map;
+    std::map<int, struct colour> y_pos_to_colour_map;
+    std::map<int, char*> y_axis_labels;
 
-    DatabaseMessageConnection *database_message_connection;
+    pthread_mutex_t start_mutex;
+    pthread_cond_t start_condition;
+    int n_populations_to_read;
+    bool database_read;
+    bool user_pressed_start;
+    bool simulation_started;
 };
 
 #endif /* RASTERPLOT_H_ */

@@ -1,10 +1,6 @@
 #include "DatabaseReader.h"
-#include "colour.h"
 
-#include <map>
-#include <sqlite3.h>
 #include <stdio.h>
-#include <algorithm>
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,7 +34,7 @@ sqlite3 *DatabaseReader::get_cursor() {
     return this->db;
 }
 
-std::vector<char *> *DatabaseReader::get_live_population_labels() {
+std::vector<char *> *DatabaseReader::get_live_output_population_labels() {
     char *sql = sqlite3_mprintf(
         "SELECT pre_vertices.vertex_label"
         " FROM Partitionable_vertices as pre_vertices"

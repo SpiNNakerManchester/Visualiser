@@ -25,79 +25,75 @@
 #include "PerformanceTimer.h"
 #include <cstddef>
 
-namespace glutFramework {
+PerformanceTimer::PerformanceTimer() {
 
-	PerformanceTimer::PerformanceTimer() {
+#ifdef WIN32
+    QueryPerformanceFrequency(&_freq);	// Retrieves the frequency of the high-resolution performance counter
+    _start.QuadPart = 0;
+    _end.QuadPart = 0;
+#else
+    _start.tv_sec = 0;
+    _start.tv_usec = 0;
+    _end.tv_sec = 0;
+    _end.tv_usec = 0;
 
-	#ifdef WIN32
-		QueryPerformanceFrequency(&_freq);	// Retrieves the frequency of the high-resolution performance counter
-		_start.QuadPart = 0;
-		_end.QuadPart = 0;
-	#else
-		_start.tv_sec = 0;
-		_start.tv_usec = 0;
-		_end.tv_sec = 0;
-		_end.tv_usec = 0;
+#endif
 
-	#endif
+    _isStopped = true;
+}
 
-		_isStopped = true;
-	}
+PerformanceTimer::~PerformanceTimer() {
+}
 
-	PerformanceTimer::~PerformanceTimer() {
-	}
+void PerformanceTimer::start() {
+#ifdef WIN32
+     QueryPerformanceCounter(&_start);	// Retrieves the current value of the high-resolution performance counter
+#else
+    gettimeofday(&_start, NULL);		// Get the starting time
+#endif
+    _isStopped = false;
+}
 
-	void PerformanceTimer::start() {
-	#ifdef WIN32
-		 QueryPerformanceCounter(&_start);	// Retrieves the current value of the high-resolution performance counter
-	#else
-		gettimeofday(&_start, NULL);		// Get the starting time
-	#endif
-		_isStopped = false;
-	}
+void PerformanceTimer::stop() {
+#ifdef WIN32
+    QueryPerformanceCounter(&_end);
+#else
+    gettimeofday(&_end, NULL);
+#endif
 
-	void PerformanceTimer::stop() {
-	#ifdef WIN32
-		QueryPerformanceCounter(&_end);
-	#else
-		gettimeofday(&_end, NULL);
-	#endif
+    _isStopped = true;
+}
 
-		_isStopped = true;
-	}
+bool PerformanceTimer::isStopped() const {
+    return _isStopped;
+}
 
-	bool PerformanceTimer::isStopped() const {
-		return _isStopped;
-	}
+double PerformanceTimer::getElapsedMicroseconds() {
+    double microSecond = 0;
 
-	double PerformanceTimer::getElapsedMicroseconds() {
-		double microSecond = 0;
+    if(!_isStopped) {
+#ifdef WIN32
+        QueryPerformanceCounter(&_end);
+#else
+        gettimeofday(&_end, NULL);
+#endif
+    }
 
-		if(!_isStopped) {
-	#ifdef WIN32
-			QueryPerformanceCounter(&_end);
-	#else
-			gettimeofday(&_end, NULL);
-	#endif
-		}
+#ifdef WIN32
+    if(_start.QuadPart != 0 && _end.QuadPart != 0) {
+        microSecond = (_end.QuadPart - _start.QuadPart) * (1000000.0 / _freq.QuadPart);
+    }
+#else
+    microSecond = (_end.tv_sec * 1000000.0 + _end.tv_usec) - (_start.tv_sec * 1000000.0 + _start.tv_usec);
+#endif
 
-	#ifdef WIN32
-		if(_start.QuadPart != 0 && _end.QuadPart != 0) {
-			microSecond = (_end.QuadPart - _start.QuadPart) * (1000000.0 / _freq.QuadPart);
-		}
-	#else
-		microSecond = (_end.tv_sec * 1000000.0 + _end.tv_usec) - (_start.tv_sec * 1000000.0 + _start.tv_usec);
-	#endif
+    return microSecond;
+}
 
-		return microSecond;
-	}
+double PerformanceTimer::getElapsedMilliseconds() {
+    return getElapsedMicroseconds() / 1000.0;
+}
 
-	double PerformanceTimer::getElapsedMilliseconds() {
-		return getElapsedMicroseconds() / 1000.0;
-	}
-
-	double PerformanceTimer::getElapsedSeconds() {
-		return getElapsedMicroseconds() / 1000000.0;
-	}
-
+double PerformanceTimer::getElapsedSeconds() {
+    return getElapsedMicroseconds() / 1000000.0;
 }

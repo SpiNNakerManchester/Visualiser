@@ -1,13 +1,3 @@
-#ifndef C_VIS_DATABASE_KEYBOARD_H_
-#define C_VIS_DATABASE_KEYBOARD_H_
-
-class Keyboard {
-public:
-	Keyboard();
-	virtual ~Keyboard();
-};
-
-#endif /* C_VIS_DATABASE_KEYBOARD_H_ */
 /*
  * The MIT License
  *
@@ -43,42 +33,40 @@ public:
  * Author: Paul Solt 8-21-10
  */
 
-namespace glutFramework {
 
-	class Keyboard {
-	private:
-		enum Key { UP, DOWN, RELEASED };
-		static const int NUMBER_KEYS = 256;
-		Key keys[ NUMBER_KEYS ];
+class Keyboard {
+private:
+    enum Key { UP, DOWN, RELEASED };
+    static const int NUMBER_KEYS = 256;
+    Key keys[ NUMBER_KEYS ];
 
-	public:
+public:
 
-		/** Name: Keyboard()
-		 *
-		 * Description: Initialize all keys in the up state
-		 */
-		Keyboard();
+    /** Name: Keyboard()
+     *
+     * Description: Initialize all keys in the up state
+     */
+    Keyboard();
 
-		/** Name: keyDown()
-		 *
-		 * Description: Set the key to the down state
-		 * Param: key - the key that is being pressed
-		 */
-		void keyDown( int key );
+    /** Name: keyDown()
+     *
+     * Description: Set the key to the down state
+     * Param: key - the key that is being pressed
+     */
+    void keyDown( int key );
 
-		/** Name: keyDown()
-		 *
-		 * Description: Set the key to the up state
-		 * Param: key - the key that is being released
-		 */
-		void keyUp( int key );
+    /** Name: keyDown()
+     *
+     * Description: Set the key to the up state
+     * Param: key - the key that is being released
+     */
+    void keyUp( int key );
 
-		/** Name: isKeyDown
-		 *
-		 * Description: Test to see if the key is being pressed
-		 */
-		bool isKeyDown( int key );
-	};
+    /** Name: isKeyDown
+     *
+     * Description: Test to see if the key is being pressed
+     */
+    bool isKeyDown( int key );
+};
 
-}
 #endif

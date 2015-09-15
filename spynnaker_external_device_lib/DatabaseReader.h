@@ -3,8 +3,8 @@
 #include <vector>
 #include <sqlite3.h>
 
-#ifndef DATABASEREADER_H_
-#define DATABASEREADER_H_
+#ifndef _DATABASE_READER_H_
+#define _DATABASE_READER_H_
 
 typedef struct ip_tag_info {
     char *ip_address;
@@ -24,7 +24,7 @@ public:
     DatabaseReader(char *database_path);
     virtual ~DatabaseReader();
     sqlite3 *get_cursor();
-    std::vector<char *> *get_live_population_labels();
+    std::vector<char *> *get_live_output_population_labels();
     std::map<int, int> *get_key_to_neuron_id_mapping(char* label);
     std::map<int, int> *get_neuron_id_to_key_mapping(char* label);
     ip_tag_info *get_live_output_details(char *label);
@@ -34,4 +34,4 @@ public:
     void close_database_connection();
 };
 
-#endif /* DATABASEREADER_H_ */
+#endif /* _DATABASE_READER_H_ */
