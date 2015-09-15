@@ -36,134 +36,130 @@
  * Author: Paul Solt 8-21-10
  */
 
-namespace glutFramework {
+template <class T>
+class Point {
 
-	template <class T>
-	class Point {
+public:
+    T x;
+    T y;
+    T z;
+    T w;
 
-	public:
-		T x;
-		T y;
-		T z;
-		T w;
+public:
+    /* Default constructor (0,0,0,1) */
+    Point();
 
-	public:
-		/* Default constructor (0,0,0,1) */
-		Point();
+    /* Create a point at (x,y,z,1) */
+    Point(T x, T y, T z);
 
-		/* Create a point at (x,y,z,1) */
-		Point(T x, T y, T z);
+    /* Create a point at (x,y,z,w). */
+    Point(T x, T y, T z, T w);
 
-		/* Create a point at (x,y,z,w). */
-		Point(T x, T y, T z, T w);
+    /* Copy Constructor */
+    Point(const Point &other);
 
-		/* Copy Constructor */
-		Point(const Point &other);
+    /* Assignment operator */
+    Point& operator=(const Point &rhs);
 
-		/* Assignment operator */
-		Point& operator=(const Point &rhs);
+    /* Equality operator */
+    bool operator==(const Point<T> &other) const;
 
-		/* Equality operator */
-		bool operator==(const Point<T> &other) const;
+    /* Inequality operator */
+    bool operator!=(const Point<T> &other) const;
 
-		/* Inequality operator */
-		bool operator!=(const Point<T> &other) const;
+    /* Calculate the distance between the current point to
+     * the given point.
+     */
+    T distance(const Point &other) const;
 
-		/* Calculate the distance between the current point to
-		 * the given point.
-		 */
-		T distance(const Point &other) const;
+    /* Transform the point by the given matrix (homogenous)*/
+    void transform(T matrix[4][4]);
 
-		/* Transform the point by the given matrix (homogenous)*/
-		void transform(T matrix[4][4]);
+    /* Set point to a new location (x,y,z,w). */
+    void setPoint(T x, T y, T z, T w);
 
-		/* Set point to a new location (x,y,z,w). */
-		void setPoint(T x, T y, T z, T w);
-
-		/**
-		 * Display a point
-		 */
-		friend std::ostream & operator<<(std::ostream &os, const Point &point) {
-			return os << "Point: (" << point.x  << ", " << point.y << ", " << point.z << ", " << point.w << ")";
-		}
-	};
+    /**
+     * Display a point
+     */
+    friend std::ostream & operator<<(std::ostream &os, const Point &point) {
+        return os << "Point: (" << point.x  << ", " << point.y << ", " << point.z << ", " << point.w << ")";
+    }
+};
 
 
-	/* Create a point at (0.0, 0.0, 0.0, 1.0 ) */
-	template <class T> Point<T>::Point() {
-		setPoint( 0.0, 0.0, 0.0, 1.0 );
-	}
+/* Create a point at (0.0, 0.0, 0.0, 1.0 ) */
+template <class T> Point<T>::Point() {
+    setPoint( 0.0, 0.0, 0.0, 1.0 );
+}
 
-	/* Create a point at (x,y,z,1) */
-	template <class T> Point<T>::Point( T x, T y, T z ) {
-		setPoint( x, y, z, 1.0 );
-	}
+/* Create a point at (x,y,z,1) */
+template <class T> Point<T>::Point( T x, T y, T z ) {
+    setPoint( x, y, z, 1.0 );
+}
 
-	/* Create a point at (x,y,z,w) */
-	template <class T> Point<T>::Point( T x, T y, T z, T w ) {
-		setPoint( x, y, z, w );
-	}
+/* Create a point at (x,y,z,w) */
+template <class T> Point<T>::Point( T x, T y, T z, T w ) {
+    setPoint( x, y, z, w );
+}
 
-	template <class T> Point<T>::Point( const Point &other ) {
-		x = other.x;
-		y = other.y;
-		z = other.z;
-		w = other.w;
-	}
+template <class T> Point<T>::Point( const Point &other ) {
+    x = other.x;
+    y = other.y;
+    z = other.z;
+    w = other.w;
+}
 
-	template <class T> Point<T>& Point<T>::operator=(const Point &rhs) {
-		// Check for self-assignment
-		if (this == &rhs)
-			return *this;        // skip and return this
+template <class T> Point<T>& Point<T>::operator=(const Point &rhs) {
+    // Check for self-assignment
+    if (this == &rhs)
+        return *this;        // skip and return this
 
-		x = rhs.x;
-		y = rhs.y;
-		z = rhs.z;
-		w = rhs.w;
+    x = rhs.x;
+    y = rhs.y;
+    z = rhs.z;
+    w = rhs.w;
 
-		return *this;
-	}
+    return *this;
+}
 
-	template <class T> bool Point<T>::operator==(const Point<T> &other) const {
-		if( x == other.x && y == other.y && z == other.z && w == other.w ) {
-			return true;
-		}
-		return false;
-	}
+template <class T> bool Point<T>::operator==(const Point<T> &other) const {
+    if( x == other.x && y == other.y && z == other.z && w == other.w ) {
+        return true;
+    }
+    return false;
+}
 
-	template <class T> bool Point<T>::operator!=(const Point<T> &other) const {
-		return !(*this == other);
-	}
+template <class T> bool Point<T>::operator!=(const Point<T> &other) const {
+    return !(*this == other);
+}
 
-	/* Calculate the distance between this point and a given point */
-	template <class T> T Point<T>::distance( const Point &other ) const {
-		return sqrt(	(other.x - x)*(other.x - x) +
-					(other.y - y)*(other.y - y) +
-					(other.z - z)*(other.z - z) );
-	}
+/* Calculate the distance between this point and a given point */
+template <class T> T Point<T>::distance( const Point &other ) const {
+    return sqrt(	(other.x - x)*(other.x - x) +
+                (other.y - y)*(other.y - y) +
+                (other.z - z)*(other.z - z) );
+}
 
-	/* Transform the point by a given amount (x,y,z). */
-	template <class T> void Point<T>::transform( T matrix[4][4] ) {
-		// Matrix multiplication
-		T value[] = { 0, 0, 0, 1 };
-		value[0] = matrix[0][0] * x + matrix[0][1] * y + matrix[0][2] * z + matrix[0][3] * w;
-		value[1] = matrix[1][0] * x + matrix[1][1] * y + matrix[1][2] * z + matrix[1][3] * w;
-		value[2] = matrix[2][0] * x + matrix[2][1] * y + matrix[2][2] * z + matrix[2][3] * w;
+/* Transform the point by a given amount (x,y,z). */
+template <class T> void Point<T>::transform( T matrix[4][4] ) {
+    // Matrix multiplication
+    T value[] = { 0, 0, 0, 1 };
+    value[0] = matrix[0][0] * x + matrix[0][1] * y + matrix[0][2] * z + matrix[0][3] * w;
+    value[1] = matrix[1][0] * x + matrix[1][1] * y + matrix[1][2] * z + matrix[1][3] * w;
+    value[2] = matrix[2][0] * x + matrix[2][1] * y + matrix[2][2] * z + matrix[2][3] * w;
 
-		x = value[0];
-		y = value[1];
-		z = value[2];
-		w = 1.0;
-	}
+    x = value[0];
+    y = value[1];
+    z = value[2];
+    w = 1.0;
+}
 
-	/* Set the point to a new position */
-	template <class T> void Point<T>::setPoint( T x, T y, T z, T w) {
-		this->x = x;
-		this->y = y;
-		this->z = z;
-		this->w = w;
-	}
-
-} // namespace
+/* Set the point to a new position */
+template <class T> void Point<T>::setPoint( T x, T y, T z, T w) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->w = w;
+}
 
 #endif

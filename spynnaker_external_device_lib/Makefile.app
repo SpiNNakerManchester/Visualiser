@@ -10,10 +10,10 @@ ifeq ($(findstring MINGW, $(UNAME_S)), MINGW)
     LIBS += -lspynnaker_external_device_lib -lpthread -lws2_32 -lsqlite3
 endif
 ifeq ($(UNAME_S), Darwin)
-    LIBS = -lspynnaker_external_device_lib -lc++ -lpthread -lsqlite
+    LIBS += -lspynnaker_external_device_lib -lc++ -lpthread -lsqlite
 endif
 ifeq ($(UNAME_S), Linux)
-    LIBS = -lspynnaker_external_device_lib -lpthread -lsqlite3
+    LIBS += -lspynnaker_external_device_lib -lpthread -lsqlite3
 endif
 
 

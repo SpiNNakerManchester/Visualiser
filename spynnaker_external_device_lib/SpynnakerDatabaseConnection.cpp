@@ -1,14 +1,18 @@
 #include "SpynnakerDatabaseConnection.h"
+
 #define MAX_PACKET_SIZE 300
 
 SpynnakerDatabaseConnection::SpynnakerDatabaseConnection(
-        DatabaseCallbackInterface *database_callback,
         StartCallbackInterface *start_callback,
         char *local_host, int local_port)
         :UDPConnection(local_port, local_host) {
-    this->database_callback = database_callback;
     this->start_callback = start_callback;
     this->start();
+}
+
+void SpynnakerDatabaseConnection::add_database_callback(
+        DatabaseCallbackInterface *callback){
+    this->database_callbacks.push_back(callback);
 }
 
 void SpynnakerDatabaseConnection::run() {
@@ -23,8 +27,11 @@ void SpynnakerDatabaseConnection::run() {
 
     // Call the callback function with the reader
     DatabaseReader reader(database_path);
-    this->database_callback->read_database_callback(&reader);
+    for (int i = 0; i < this->database_callbacks.size(); i++) {
+        this->database_callbacks[i]->read_database_callback(&reader);
+    }
     reader.close_database_connection();
+
     // Send the notification back that the database has been read
     unsigned char eieio_response[2];
     eieio_response[1] = (1 << 6);

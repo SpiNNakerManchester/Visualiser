@@ -7,10 +7,9 @@
 #include <set>
 #include <string.h>
 #include <algorithm>
+#include <SpynnakerLiveSpikesConnection.h>
 #include "main.h"
-#include "utilities/DatabaseReader.h"
 #include "utilities/ColourReader.h"
-#include "utilities/DatabaseMessageConnection.h"
 #include "raster_view/RasterPlot.h"
 
 char* get_next_arg(int position, char **argv, int argc){
@@ -38,11 +37,13 @@ int main(int argc, char **argv){
     char* packet_file_path = NULL;
     char* colour_file_path = NULL;
     char* remote_host = NULL;
+    float ms_per_pixel = 0.0;
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
 
         if (strcmp(argv[arg_index], "-hand_shake_port") == 0){
-            hand_shake_listen_port_no = atoi(get_next_arg(arg_index, argv, argc));
+            hand_shake_listen_port_no = atoi(get_next_arg(
+                arg_index, argv, argc));
         }
         if (strcmp(argv[arg_index], "-database") == 0){
             absolute_file_path = get_next_arg(arg_index, argv, argc);
@@ -52,6 +53,9 @@ int main(int argc, char **argv){
         }
         if (strcmp(argv[arg_index], "-remote_host") == 0) {
             remote_host = get_next_arg(arg_index, argv, argc);
+        }
+        if (strcmp(argv[arg_index], "-ms_per_pixel") == 0) {
+            ms_per_pixel = atof(get_next_arg(arg_index, argv, argc));
         }
     }
 
@@ -67,88 +71,28 @@ int main(int argc, char **argv){
                "<optional file path to where the database is located,"
                " if needed for manual configuration>\n"
                "[-remote_host] "
-               "<optional remote host, which will allow port triggering>\n");
+               "<optional remote host, which will allow port triggering>\n"
+               "[-ms_per_pixel] "
+               "<optional number of milliseconds to show per pixel (will cause"
+               "scrolling if run time is larger than will fit in window)\n");
         return 1;
-    }
-
-    DatabaseMessageConnection *database_message_connection = NULL;
-    if (absolute_file_path == NULL) {
-        database_message_connection = new DatabaseMessageConnection(
-            hand_shake_listen_port_no);
-        printf("awaiting tool chain hand shake to say database is ready \n");
-        packet_file_path = database_message_connection->recieve_notification();
-        printf("received tool chain hand shake to say database is ready \n");
-    }
-
-    // Open the database
-    DatabaseReader* database = NULL;
-    if (!absolute_file_path){
-        printf("using packet based address \n");
-        database = new DatabaseReader(packet_file_path);
-    } else {
-        printf("using command based address \n");
-        database = new DatabaseReader(absolute_file_path);
     }
 
     // Get the details of the populations to be visualised
     ColourReader *colour_reader = new ColourReader(colour_file_path);
     std::vector<char *> *labels = colour_reader->get_labels();
 
-    // Read the database and store the results in a useful form
-    std::map<int, char*> *y_axis_labels = new std::map<int, char*>();
-    std::map<int, int> *key_to_neuronid_map = new std::map<int, int>();
-    std::map<int, colour> *neuron_id_to_colour_map =
-            new std::map<int, colour>();
-    std::set<int> *ports_to_listen_to = new std::set<int>();
-    int base_neuron_id = 0;
-
-    for (std::vector<char *>::iterator iter = labels->begin();
-            iter != labels->end(); iter++) {
-        char *label = *iter;
-        fprintf(stderr, "Reading %s\n", label);
-
-		// Get the port details
-		ip_tag_info *tag = database->get_live_output_details(label);
-		ports_to_listen_to->insert(tag->port);
-		free(tag);
-
-        fprintf(stderr, "Reading key neuron mapping");
-        // Get the key to neuron id for this population and the colour
-        std::map<int, int> *key_map =
-            database->get_key_to_neuron_id_mapping(label);
-        colour col = colour_reader->get_colour(label);
-
-        // Add the keys to the global maps, adding the current base neuron id
-        for (std::map<int, int>::iterator key_iter = key_map->begin();
-                key_iter != key_map->end(); key_iter++) {
-            int nid = key_iter->second + base_neuron_id;
-            (*key_to_neuronid_map)[key_iter->first] = nid;
-            (*neuron_id_to_colour_map)[nid] = col;
-        }
-        delete key_map;
-
-        // Put the label half-way up the population
-        int n_neurons = database->get_n_neurons(label);
-        (*y_axis_labels)[base_neuron_id + (n_neurons / 2)] = label;
-
-        // Add to the base neurons for the next population (plus a spacer)
-        base_neuron_id += n_neurons + 10;
-    }
-
-    // Get other parameters
-    float run_time = database->get_configuration_parameter_value(
-        (char *) "runtime");
-    float machine_time_step = database->get_configuration_parameter_value(
-        (char *) "machine_time_step") / 1000.0;
-
-    // Close the database
-    database->close_database_connection();
-    delete database;
+    SpynnakerLiveSpikesConnection connection(
+        (int) labels->size(), &((*labels)[0]), 0, (char **) NULL,
+        (char *) NULL, hand_shake_listen_port_no, false);
 
     // Create the visualiser
-    RasterPlot plotter(
-        argc, argv, remote_host, ports_to_listen_to, y_axis_labels,
-        key_to_neuronid_map, neuron_id_to_colour_map, run_time,
-        machine_time_step, base_neuron_id, database_message_connection);
+    RasterPlot plotter(argc, argv, colour_reader, ms_per_pixel);
+    for (int i = 0; i < labels->size(); i++) {
+        connection.add_initialize_callback((*labels)[i], &plotter);
+        connection.add_receive_callback((*labels)[i], &plotter);
+        connection.add_start_callback((*labels)[i], &plotter);
+    }
+    plotter.main_loop();
     return 0;
 }

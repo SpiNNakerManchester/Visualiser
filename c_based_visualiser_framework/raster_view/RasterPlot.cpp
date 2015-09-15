@@ -7,61 +7,108 @@
 #include <stdarg.h>
 #include <time.h>
 #include "RasterPlot.h"
-#include "PacketConverter.h"
-#include "../utilities/SocketQueuer.h"
 #include "../utilities/colour.h"
 #include "../glut_framework/GlutFramework.h"
 
-using namespace glutFramework;
-using namespace std;
 
-RasterPlot::RasterPlot(int argc, char **argv, char *remote_host,
-                    std::set<int> *ports,
-                    map<int, char*> *y_axis_labels,
-                    map<int, int> *key_to_neuronid_map,
-                    map<int, colour> *neuron_id_to_colour_map,
-                    float plot_time_ms, float timestep_ms, int n_neurons,
-                    DatabaseMessageConnection *database_message_connection) {
+RasterPlot::RasterPlot(
+        int argc, char **argv, ColourReader *colour_reader,
+        float ms_per_pixel) {
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
+    this->base_pos = 0;
+    this->user_pressed_start = false;
+    this->simulation_started = false;
+    this->database_read = false;
+    this->n_neurons = 0;
+    this->timestep_ms = 0;
+    this->plot_time_ms = 0;
+    this->ms_per_pixel = ms_per_pixel;
+    this->latest_time = 0.0;
 
-    this->y_axis_labels = y_axis_labels;
-    this->key_to_neuronid_map = key_to_neuronid_map;
-    this->neuron_id_to_colour_map = neuron_id_to_colour_map;
-    this->plot_time_ms = plot_time_ms;
-    this->timestep_ms = timestep_ms;
-    this->n_neurons = n_neurons;
-    this->database_message_connection = database_message_connection;
+    this->n_populations_to_read = colour_reader->get_labels()->size();
 
-    fprintf(stderr, "n_neurons = %i\n", this->n_neurons);
-    fprintf(stderr, "plot time = %f\n", this->plot_time_ms);
-    fprintf(stderr, "timestep = %f\n", this->timestep_ms);
+    this->colour_reader = colour_reader;
+    this->argc = argc;
+    this->argv = argv;
 
-
-    if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
-        fprintf(stderr, "Error initializing mutex!\n");
+    if (pthread_mutex_init(&(this->start_mutex), NULL) == -1) {
+        fprintf(stderr, "Error initializing start mutex!\n");
+        exit(-1);
+    }
+    if (pthread_cond_init(&(this->start_condition), NULL) == -1) {
+        fprintf(stderr, "Error initializing start condition!\n");
         exit(-1);
     }
 
-    for (std::set<int>::iterator iter = ports->begin();
-            iter != ports->end(); iter++) {
-        int port = *iter;
-        printf("listening to port %d", port);
-        SocketQueuer *queuer = new SocketQueuer(port, remote_host);
-        queuer->start();
-        PacketConverter *translater = new PacketConverter(
-            queuer, &(this->points_to_draw), &(this->point_mutex),
-            this->key_to_neuronid_map);
-        translater->start();
+    if (pthread_mutex_init(&(this->point_mutex), NULL) == -1) {
+        fprintf(stderr, "Error initializing point mutex!\n");
+        exit(-1);
     }
+}
+
+void RasterPlot::main_loop() {
     startFramework(argc, argv, "Raster Plot", window_width, window_height,
-                INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
+                   INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
 }
 
 void RasterPlot::init() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glColor3f(1.0, 1.0, 1.0);
     glShadeModel(GL_SMOOTH);
+}
+
+void RasterPlot::init_population(
+        char *label, int n_neurons, float run_time_ms,
+        float machine_time_step_ms) {
+    std::string label_str = std::string(label);
+    this->plot_time_ms = run_time_ms;
+    this->timestep_ms = machine_time_step_ms;
+
+    char *y_axis_label = (char *) malloc(sizeof(char) * strlen(label));
+    strcpy(y_axis_label, label);
+    this->y_axis_labels[this->base_pos + (n_neurons / 2)] = y_axis_label;
+    this->label_to_base_pos_map[label_str] = this->base_pos;
+    struct colour colour = colour_reader->get_colour(label);
+    for (int i = 0; i < n_neurons; i++) {
+        this->y_pos_to_colour_map[this->base_pos + i] = colour;
+    }
+    this->n_neurons += n_neurons;
+    this->base_pos += n_neurons + 10;
+
+
+    pthread_mutex_lock(&(this->start_mutex));
+    this->n_populations_to_read -= 1;
+    if (this->n_populations_to_read <= 0) {
+        this->database_read = true;
+        while (!this->user_pressed_start) {
+            pthread_cond_wait(&(this->start_condition), &(this->start_mutex));
+        }
+    }
+    pthread_mutex_unlock(&(this->start_mutex));
+}
+
+void RasterPlot::spikes_start(
+        char *label, SpynnakerLiveSpikesConnection *connection) {
+    pthread_mutex_lock(&(this->start_mutex));
+    this->simulation_started = true;
+    pthread_mutex_unlock(&(this->start_mutex));
+}
+
+void RasterPlot::receive_spikes(
+        char *label, int time, int n_spikes, int *spikes) {
+    pthread_mutex_lock(&(this->point_mutex));
+    std::string label_str = std::string(label);
+    int base_pos = this->label_to_base_pos_map[label_str];
+    for (int i = 0; i < n_spikes; i++) {
+        std::pair<int, int> point(time, spikes[i] + base_pos);
+        this->points_to_draw.push_back(point);
+    }
+    float time_ms = time * this->timestep_ms;
+    if (time_ms > this->latest_time) {
+        this->latest_time = time_ms;
+    }
+    pthread_mutex_unlock(&(this->point_mutex));
 }
 
 //-------------------------------------------------------------------------
@@ -72,11 +119,6 @@ void RasterPlot::printgl(float x, float y, void *font_style,
     va_list arg_list;
     char str[256];
     int i;
-
-    // font options:  GLUT_BITMAP_8_BY_13 GLUT_BITMAP_9_BY_15
-    //GLUT_BITMAP_TIMES_ROMAN_10 GLUT_BITMAP_HELVETICA_10
-    //GLUT_BITMAP_HELVETICA_12 GLUT_BITMAP_HELVETICA_18
-    //GLUT_BITMAP_TIMES_ROMAN_24
 
     va_start(arg_list, format);
     vsprintf(str, format, arg_list);
@@ -118,40 +160,71 @@ void RasterPlot::printglstroke(float x, float y, float size, float rotate,
 
 void RasterPlot::display(float time) {
     if (glutGetWindow() == this->window) {
+
         glPointSize(1.0);
-        float x_spacing = (float) (window_width - (2 * WINDOW_BORDER))
-                / ((float) plot_time_ms / timestep_ms);
-        float y_spacing = (float) (window_height - (2 * WINDOW_BORDER))
-                / (float) n_neurons;
 
         glClearColor(1.0, 1.0, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
         glColor4f(0.0, 0.0, 0.0, 1.0);
 
-        char title[] = "Raster Plot";
-        printgl((window_width / 2) - 75, window_height - 50,
-                GLUT_BITMAP_TIMES_ROMAN_24, title);
+
+        float start = 0.0;
+        float end = this->plot_time_ms;
+        if (ms_per_pixel != 0.0) {
+            end = this->latest_time;
+            start = end -
+                ((window_width - (2 * WINDOW_BORDER)) * ms_per_pixel);
+            if (start < 0.0) {
+                start = 0.0;
+                end = start +
+                    ((window_width - (2 * WINDOW_BORDER)) * ms_per_pixel);
+            }
+        }
+        float x_spacing = (float) (window_width - (2 * WINDOW_BORDER)) /
+            ((end - start) / this->timestep_ms);
+        float y_spacing = (float) (window_height - (2 * WINDOW_BORDER))
+                / (float) this->base_pos;
 
         char x_axis[] = "Simulation Time (ms)";
         printglstroke((window_width / 2) - 100, 20, 0.12, 0, x_axis);
-        char label_0[] = "0";
-        printglstroke(WINDOW_BORDER - 15, WINDOW_BORDER - 20, 0.10, 0, label_0);
+        char label_0[] = "%.1f";
+        printglstroke(
+            WINDOW_BORDER - 15, WINDOW_BORDER - 20, 0.10, 0, label_0, start);
         char label_max[] = "%.1f";
-        printglstroke(window_width - WINDOW_BORDER - 20, WINDOW_BORDER - 20,
-                0.10, 0, label_max, plot_time_ms);
+        printglstroke(
+            window_width - WINDOW_BORDER - 20, WINDOW_BORDER - 20,
+            0.10, 0, label_max, end);
 
-        for (map<int, char*>::iterator iter = y_axis_labels->begin();
-                iter != y_axis_labels->end(); ++iter) {
+        for (std::map<int, char*>::iterator iter = y_axis_labels.begin();
+                iter != y_axis_labels.end(); ++iter) {
             float y_value = ((iter->first * y_spacing) + WINDOW_BORDER) - 10;
-            float width =
-                    glutStrokeLength(GLUT_STROKE_ROMAN,
-                                    reinterpret_cast<const unsigned char*>
-                                     (iter->second))
-                    * 0.1;
+            float width = glutStrokeLength(
+                GLUT_STROKE_ROMAN,
+                reinterpret_cast<const unsigned char*> (iter->second)) * 0.1;
             char y_label[] = "%s";
             printglstroke((WINDOW_BORDER - width) - 20, y_value, 0.10, 0,
                     iter->second);
         }
+
+        pthread_mutex_lock(&(this->start_mutex));
+        if (!this->database_read) {
+            char prompt[] = "Waiting for database to be ready...";
+            printgl((window_width / 2) - 120, window_height - 50,
+                    GLUT_BITMAP_TIMES_ROMAN_24, prompt);
+        } else if (!this->user_pressed_start) {
+            char prompt[] = "Press space bar to start...";
+            printgl((window_width / 2) - 100, window_height - 50,
+                    GLUT_BITMAP_TIMES_ROMAN_24, prompt);
+        } else if (!this->simulation_started) {
+            char prompt[] = "Waiting for simulation to start...";
+            printgl((window_width / 2) - 120, window_height - 50,
+                    GLUT_BITMAP_TIMES_ROMAN_24, prompt);
+        } else {
+            char title[] = "Raster Plot";
+            printgl((window_width / 2) - 75, window_height - 50,
+                    GLUT_BITMAP_TIMES_ROMAN_24, title);
+        }
+        pthread_mutex_unlock(&(this->start_mutex));
 
         glColor4f(0.0, 0.0, 0.0, 1.0);
         glLineWidth(1.0);
@@ -166,26 +239,36 @@ void RasterPlot::display(float time) {
 
         glPointSize(2.0);
         glBegin(GL_POINTS);
-        pthread_mutex_lock(&(this->point_mutex));
-        for (deque<pair<int, int> >::iterator iter =
-                points_to_draw.begin(); iter != points_to_draw.end(); ++iter) {
 
-            if (neuron_id_to_colour_map->find(iter->second)
-                    == neuron_id_to_colour_map->end()) {
+        int start_tick = 0;
+        int end_tick = this->plot_time_ms / this->timestep_ms;
+        if (ms_per_pixel != 0.0) {
+            start_tick = start / this->timestep_ms;
+            end_tick = end / this->timestep_ms;
+        }
+
+        pthread_mutex_lock(&(this->point_mutex));
+        for (std::deque<std::pair<int, int> >::iterator iter =
+                points_to_draw.begin(); iter != points_to_draw.end(); ++iter) {
+            std::map<int, struct colour>::iterator colour_value =
+                this->y_pos_to_colour_map.find(iter->second);
+            if (colour_value == y_pos_to_colour_map.end()) {
                 fprintf(stderr, "Missing colour for neuron %d\n", iter->second);
                 continue;
             }
-            struct colour colour = (*neuron_id_to_colour_map)[iter->second];
-
+            struct colour colour = colour_value->second;
             glColor4f(colour.r, colour.g, colour.b, 1.0);
-            float x_value = (iter->first * x_spacing) + WINDOW_BORDER;
-            float y_value = (iter->second * y_spacing) + WINDOW_BORDER;
+            if (iter->first >= start_tick && iter->first <= end_tick) {
+                float x_value = ((iter->first - start_tick) * x_spacing)
+                                 + WINDOW_BORDER;
+                float y_value = (iter->second * y_spacing) + WINDOW_BORDER + 1;
 
-            glVertex2f(x_value, y_value);
+                glVertex2f(x_value, y_value);
+            }
         }
         pthread_mutex_unlock(&(this->point_mutex));
-        glEnd();
 
+        glEnd();
         glutSwapBuffers();
     }
 }
@@ -210,15 +293,17 @@ void RasterPlot::reshape(int width, int height) {
 }
 
 void RasterPlot::keyboardUp(unsigned char key, int x, int y) {
-    if ((int) key == 13) {
-        if (database_message_connection != NULL) {
+    if ((int) key == 32) {
 
-            // create and send the eieio command message confirming database
-            // read
+        // create and send the eieio command message confirming database
+        // read
+        pthread_mutex_lock(&(this->start_mutex));
+        if (!this->user_pressed_start) {
             printf("Starting the simulation\n");
-            database_message_connection->send_ready_notification();
-            database_message_connection->close_connection();
+            this->user_pressed_start = true;
+            pthread_cond_signal(&(this->start_condition));
         }
+        pthread_mutex_unlock(&(this->start_mutex));
     }
 }
 
