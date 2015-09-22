@@ -13,3 +13,4 @@
 *.exe
 vis
 /.cproject
+/Debug/
