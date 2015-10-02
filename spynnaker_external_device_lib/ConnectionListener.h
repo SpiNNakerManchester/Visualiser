@@ -2,6 +2,7 @@
 #include "Threadable.h"
 #include "EIEIOMessage.h"
 #include <set>
+#include <queue>
 
 #ifndef _CONNECTION_LISTENER_H_
 #define _CONNECTION_LISTENER_H_
@@ -23,9 +24,23 @@ protected:
     void run();
 
 private:
+    class Reader : public Threadable {
+    public:
+        Reader(ConnectionListener *listener);
+        void run();
+        ConnectionListener *listener;
+
+    };
+
+    Reader *reader;
     UDPConnection* _connection;
     bool _done;
-    unsigned char* data;
+    pthread_mutex_t free_data_mutex;
+    pthread_mutex_t data_to_process_mutex;
+    pthread_cond_t free_data_condition;
+    pthread_cond_t data_to_process_condition;
+    std::queue<unsigned char *> free_data;
+    std::queue<unsigned char *> data_to_process;
     std::set<PacketReceiveCallbackInterface*> _callbacks;
 };
 

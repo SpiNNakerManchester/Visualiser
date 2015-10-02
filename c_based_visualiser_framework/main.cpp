@@ -87,11 +87,15 @@ int main(int argc, char **argv){
         (char *) NULL, hand_shake_listen_port_no, false);
 
     // Create the visualiser
-    RasterPlot plotter(argc, argv, colour_reader, ms_per_pixel);
+    RasterPlot plotter(argc, argv, colour_reader, ms_per_pixel,
+                       absolute_file_path == NULL);
     for (int i = 0; i < labels->size(); i++) {
         connection.add_initialize_callback((*labels)[i], &plotter);
         connection.add_receive_callback((*labels)[i], &plotter);
         connection.add_start_callback((*labels)[i], &plotter);
+    }
+    if (absolute_file_path != NULL) {
+        connection.set_database(absolute_file_path);
     }
     plotter.main_loop();
     return 0;

@@ -13,11 +13,11 @@
 
 RasterPlot::RasterPlot(
         int argc, char **argv, ColourReader *colour_reader,
-        float ms_per_pixel) {
+        float ms_per_pixel, bool wait_for_start) {
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
     this->base_pos = 0;
-    this->user_pressed_start = false;
+    this->user_pressed_start = !wait_for_start;
     this->simulation_started = false;
     this->database_read = false;
     this->n_neurons = 0;

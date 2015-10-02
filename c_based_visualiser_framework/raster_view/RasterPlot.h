@@ -15,7 +15,8 @@ class RasterPlot : public GlutFramework, public SpikeReceiveCallbackInterface,
 
 public:
     RasterPlot(
-        int argc, char **argv, ColourReader *colour_reader, float ms_per_pixel);
+        int argc, char **argv, ColourReader *colour_reader, float ms_per_pixel,
+        bool wait_for_start=true);
     void init();
     void main_loop();
     virtual void init_population(

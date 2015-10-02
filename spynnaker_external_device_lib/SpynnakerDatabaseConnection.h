@@ -24,6 +24,7 @@ public:
         StartCallbackInterface *start_callback=NULL,
         char *local_host=NULL, int local_port=0);
     void add_database_callback(DatabaseCallbackInterface *callback);
+    void set_database(char *database_path);
     ~SpynnakerDatabaseConnection();
 
 protected:
@@ -32,6 +33,7 @@ protected:
 private:
     std::vector<DatabaseCallbackInterface *> database_callbacks;
     StartCallbackInterface *start_callback;
+    bool database_path_received;
 };
 
 #endif /* _SPYNNAKER_DATABASE_CONNECTION_H_ */
