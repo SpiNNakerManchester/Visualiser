@@ -37,10 +37,10 @@ sqlite3 *DatabaseReader::get_cursor() {
 std::vector<char *> *DatabaseReader::get_live_output_population_labels() {
     char *sql = sqlite3_mprintf(
         "SELECT pre_vertices.vertex_label"
-        " FROM Partitionable_vertices as pre_vertices"
-        " JOIN Partitionable_edges as edges"
+        " FROM Application_vertices as pre_vertices"
+        " JOIN Application_edges as edges"
         " ON pre_vertices.vertex_id == edges.pre_vertex"
-        " JOIN Partitionable_vertices as post_vertices"
+        " JOIN Application_vertices as post_vertices"
         " ON edges.post_vertex = post_vertices.vertex_id"
         " WHERE post_vertices.vertex_label == \"LiveSpikeReceiver\"");
     sqlite3_stmt *compiled_statment;
@@ -66,7 +66,7 @@ std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
     char *sql = sqlite3_mprintf(
         "SELECT n.atom_id as a_id, n.event_id as event"
         " FROM event_to_atom_mapping as n"
-        " JOIN Partitionable_vertices as p ON n.vertex_id = p.vertex_id"
+        " JOIN Application_vertices as p ON n.vertex_id = p.vertex_id"
         " WHERE p.vertex_label=\"%q\"", label);
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
@@ -91,7 +91,7 @@ std::map<int, int> *DatabaseReader::get_neuron_id_to_key_mapping(char* label) {
     char *sql = sqlite3_mprintf(
         "SELECT n.atom_id as a_id, n.event_id as event"
         " FROM event_to_atom_mapping as n"
-        " JOIN Partitionable_vertices as p ON n.vertex_id = p.vertex_id"
+        " JOIN Application_vertices as p ON n.vertex_id = p.vertex_id"
         " WHERE p.vertex_label=\"%q\"", label);
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
@@ -116,12 +116,12 @@ ip_tag_info *DatabaseReader::get_live_output_details(char *label) {
     char *sql = sqlite3_mprintf(
         "SELECT tag.ip_address, tag.port, tag.strip_sdp FROM IP_tags as tag"
         " JOIN graph_mapper_vertex as mapper"
-        " ON tag.vertex_id = mapper.partitioned_vertex_id"
-        " JOIN Partitionable_vertices as post_vertices"
-        " ON mapper.partitionable_vertex_id = post_vertices.vertex_id"
-        " JOIN Partitionable_edges as edges"
-        " ON mapper.partitionable_vertex_id == edges.post_vertex"
-        " JOIN Partitionable_vertices as pre_vertices"
+        " ON tag.vertex_id = mapper.machine_vertex_id"
+        " JOIN Application_vertices as post_vertices"
+        " ON mapper.application_vertex_id = post_vertices.vertex_id"
+        " JOIN Application_edges as edges"
+        " ON mapper.application_vertex_id == edges.post_vertex"
+        " JOIN Application_vertices as pre_vertices"
         " ON edges.pre_vertex == pre_vertices.vertex_id"
         " WHERE pre_vertices.vertex_label == \"%q\""
         " AND post_vertices.vertex_label == \"LiveSpikeReceiver\"", label);
@@ -151,10 +151,10 @@ reverse_ip_tag_info *DatabaseReader::get_live_input_details(char *label) {
         "SELECT tag.board_address, tag.port as port"
         " FROM Reverse_IP_tags as tag"
         " JOIN graph_mapper_vertex as mapper"
-        " ON tag.vertex_id = mapper.partitioned_vertex_id"
-        " JOIN Partitionable_vertices as partitionable"
-        " ON mapper.partitionable_vertex_id = partitionable.vertex_id"
-        " WHERE partitionable.vertex_label=\"%q\"", label);
+        " ON tag.vertex_id = mapper.machine_vertex_id"
+        " JOIN Application_vertices as application"
+        " ON mapper.application_vertex_id = application.vertex_id"
+        " WHERE application.vertex_label=\"%q\"", label);
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
@@ -179,7 +179,7 @@ reverse_ip_tag_info *DatabaseReader::get_live_input_details(char *label) {
 
 int DatabaseReader::get_n_neurons(char *label) {
     char *sql = sqlite3_mprintf(
-        "SELECT no_atoms FROM Partitionable_vertices"
+        "SELECT no_atoms FROM Application_vertices"
         " WHERE vertex_label = \"%q\"", label);
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
