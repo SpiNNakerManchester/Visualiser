@@ -77,13 +77,16 @@ int main(int argc, char **argv){
     }
 
     std::vector<char *> labels;
-    for (uint32_t i = 0; i < 81; i++) {
+    /*for (uint32_t i = 0; i < 81; i++) {
         uint32_t x = (i / 9) + 1;
         uint32_t y = (i % 9) + 1;
         char *label = (char *) malloc(sizeof(char) * 7);
         sprintf(label, "Cell%u%u", x, y);
         labels.push_back(label);
-    }
+    }*/
+    char *label = (char *) malloc(sizeof(char) * 7);
+    sprintf(label, "Cells");
+    labels.push_back(label);
 
     SpynnakerLiveSpikesConnection connection(
         (int) labels.size(), &(labels[0]), 0, (char **) NULL,

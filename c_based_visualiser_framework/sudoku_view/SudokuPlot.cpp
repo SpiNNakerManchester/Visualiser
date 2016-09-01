@@ -27,7 +27,7 @@ SudokuPlot::SudokuPlot(
     this->latest_time = 0.0;
     this->neurons_per_number = neurons_per_number;
 
-    this->n_populations_to_read = 81;
+    this->n_populations_to_read = 1;
 
     this->argc = argc;
     this->argv = argv;
@@ -96,9 +96,11 @@ void SudokuPlot::receive_spikes(
         char *label, int time, int n_spikes, int *spikes) {
     pthread_mutex_lock(&(this->point_mutex));
     std::string label_str = std::string(label);
-    int cell_id = this->label_to_cell_map[label_str];
     for (int i = 0; i < n_spikes; i++) {
-        std::pair<int, int> point(time, spikes[i]);
+        int cell_id = spikes[i] / (this->neurons_per_number * 9);
+        int neuron_id = spikes[i] % (this->neurons_per_number * 9);
+        fprintf(stderr, "Spike %i, cell %i, neuron %i\n", spikes[i], cell_id, neuron_id);
+        std::pair<int, int> point(time, neuron_id);
         this->points_to_draw[cell_id].push_back(point);
     }
     float time_ms = time * this->timestep_ms;
@@ -318,7 +320,7 @@ void SudokuPlot::display(float time) {
             uint32_t x_start = WINDOW_BORDER + (cell_x * cell_width) + 1;
             uint32_t y_start = WINDOW_BORDER + (cell_y * cell_height) + 1;
             float y_spacing = (float) cell_height
-                    / (float) this->cell_size_map.find(cell)->second;
+                    / (float) (this->neurons_per_number * 9);
 
             // Work out how probable the number is and use this for colouring
             float cell_sat = 1 - cell_prob[cell];
