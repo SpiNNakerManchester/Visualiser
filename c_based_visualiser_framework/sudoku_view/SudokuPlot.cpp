@@ -99,7 +99,6 @@ void SudokuPlot::receive_spikes(
     for (int i = 0; i < n_spikes; i++) {
         int cell_id = spikes[i] / (this->neurons_per_number * 9);
         int neuron_id = spikes[i] % (this->neurons_per_number * 9);
-        fprintf(stderr, "Spike %i, cell %i, neuron %i\n", spikes[i], cell_id, neuron_id);
         std::pair<int, int> point(time, neuron_id);
         this->points_to_draw[cell_id].push_back(point);
     }
