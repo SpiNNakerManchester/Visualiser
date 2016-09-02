@@ -8,12 +8,12 @@
 #include <set>
 #include <pthread.h>
 
-class GridPlot : public GlutFramework, public SpikeReceiveCallbackInterface,
+class SudokuPlot : public GlutFramework, public SpikeReceiveCallbackInterface,
                    public SpikesStartCallbackInterface,
                    public SpikeInitializeCallbackInterface {
 
 public:
-    GridPlot(
+    SudokuPlot(
         int argc, char **argv, int neurons_per_number, float ms_per_bin,
         bool wait_for_start=true);
     void init();
@@ -28,7 +28,7 @@ public:
     void display(float time);
     void reshape(int width, int height);
     void keyboardUp(unsigned char key, int x, int y);
-    virtual ~GridPlot();
+    virtual ~SudokuPlot();
 
 private:
     void printgl(float x, float y, void *font_style, char* format, ...);
@@ -53,6 +53,7 @@ private:
     int window_height;
     float ms_per_bin;
     float latest_time;
+    int neurons_per_number;
 
     std::deque<std::pair<int, int> > points_to_draw[81];
     pthread_mutex_t point_mutex;
