@@ -8,12 +8,12 @@
 #include <set>
 #include <pthread.h>
 
-class GridPlot : public GlutFramework, public SpikeReceiveCallbackInterface,
+class SudokuPlot : public GlutFramework, public SpikeReceiveCallbackInterface,
                    public SpikesStartCallbackInterface,
                    public SpikeInitializeCallbackInterface {
 
 public:
-    GridPlot(
+    SudokuPlot(
         int argc, char **argv, int neurons_per_number, float ms_per_bin,
         bool wait_for_start=true);
     void init();

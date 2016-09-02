@@ -3,7 +3,8 @@ OBJECTS = UDPConnection.o \
           DatabaseReader.o \
           SpynnakerLiveSpikesConnection.o \
           EIEIOMessage.o \
-          ConnectionListener.o
+          ConnectionListener.o \
+          SpiNNakerFrontEndCommonLiveEventsConnection.o
    
 OBJS=$(OBJECTS:%=build/%)
 

@@ -1,11 +1,11 @@
 OBJECTS = utilities/ColourReader.o \
-          sudoku_view/GridPlot.o \
+          grid_view/GridPlotPartitionable.o \
           glut_framework/GlutFramework.o \
           glut_framework/PerformanceTimer.o \
           glut_framework/Keyboard.o \
-          sudoku.o
+          gridPartitionable.o
 
-APP = sudoku
+APP = gridPartitionable
 
 UNAME_S := $(shell uname -s)
 ifeq ($(findstring MINGW, $(UNAME_S)), MINGW)

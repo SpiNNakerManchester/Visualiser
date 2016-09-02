@@ -7,7 +7,7 @@
 #include <set>
 #include <string.h>
 #include <algorithm>
-#include <SpynnakerLiveSpikesConnection.h>
+#include <SpiNNakerFrontEndCOmmonLiveEventsConnection.h>
 #include "main.h"
 #include "utilities/ColourReader.h"
 #include "grid_view/gridPlot.h"
@@ -79,23 +79,17 @@ int main(int argc, char **argv){
     }
 
     std::vector<char *> labels;
-    /*for (uint32_t i = 0; i < 81; i++) {
-        uint32_t x = (i / 9) + 1;
-        uint32_t y = (i % 9) + 1;
-        char *label = (char *) malloc(sizeof(char) * 7);
-        sprintf(label, "Cell%u%u", x, y);
-        labels.push_back(label);
-    }*/
+
     char *label = (char *) malloc(sizeof(char) * 7);
     sprintf(label, "Cells");
     labels.push_back(label);
 
-    SpynnakerLiveSpikesConnection connection(
+    SpiNNakerFrontEndCOmmonLiveEventsConnection connection(
         (int) labels.size(), &(labels[0]), 0, (char **) NULL,
         (char *) NULL, hand_shake_listen_port_no, false);
 
     // Create the visualiser
-    GridPlot plotter(argc, argv, grid_size_x, grid_size_y,
+    GridPlotPartitionable plotter(argc, argv, grid_size_x, grid_size_y,
                        absolute_file_path == NULL);
     for (int i = 0; i < labels.size(); i++) {
         connection.add_initialize_callback(labels[i], &plotter);

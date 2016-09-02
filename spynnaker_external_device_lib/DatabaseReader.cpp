@@ -62,7 +62,7 @@ std::vector<char *> *DatabaseReader::get_live_output_population_labels() {
     }
 }
 
-std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
+std::map<int, int> *DatabaseReader::get_key_to_atom_id_mapping(char* label) {
     char *sql = sqlite3_mprintf(
         "SELECT n.atom_id as a_id, n.event_id as event"
         " FROM event_to_atom_mapping as n"
@@ -71,14 +71,14 @@ std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
-        std::map<int, int> *key_to_neuron_id_map = new std::map<int, int>();
+        std::map<int, int> *key_to_atom_id_map = new std::map<int, int>();
         while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-            int neuron_id = sqlite3_column_int(compiled_statment, 0);
+            int atom_id = sqlite3_column_int(compiled_statment, 0);
             int key = sqlite3_column_int(compiled_statment, 1);
-            (*key_to_neuron_id_map)[key] = neuron_id;
+            (*key_to_atom_id_map)[key] = atom_id;
         }
         sqlite3_free(sql);
-        return key_to_neuron_id_map;
+        return key_to_atom_id_map;
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
                 sqlite3_errcode(this->db),
@@ -87,7 +87,7 @@ std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
     }
 }
 
-std::map<int, int> *DatabaseReader::get_neuron_id_to_key_mapping(char* label) {
+std::map<int, int> *DatabaseReader::get_atom_id_to_key_mapping(char* label) {
     char *sql = sqlite3_mprintf(
         "SELECT n.atom_id as a_id, n.event_id as event"
         " FROM event_to_atom_mapping as n"
@@ -96,14 +96,14 @@ std::map<int, int> *DatabaseReader::get_neuron_id_to_key_mapping(char* label) {
     sqlite3_stmt *compiled_statment;
     if (sqlite3_prepare_v2(this->db, sql, -1,
                            &compiled_statment, NULL) == SQLITE_OK){
-        std::map<int, int> *neuron_id_to_key_map = new std::map<int, int>();
+        std::map<int, int> *atom_id_to_key_map = new std::map<int, int>();
         while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
-            int neuron_id = sqlite3_column_int(compiled_statment, 0);
+            int atom_id = sqlite3_column_int(compiled_statment, 0);
             int key = sqlite3_column_int(compiled_statment, 1);
-            (*neuron_id_to_key_map)[neuron_id] = key;
+            (*atom_id_to_key_map)[atom_id] = key;
         }
         sqlite3_free(sql);
-        return neuron_id_to_key_map;
+        return atom_id_to_key_map;
     } else {
         fprintf(stderr, "Error reading database: %i: %s\n",
                 sqlite3_errcode(this->db),
@@ -177,7 +177,7 @@ reverse_ip_tag_info *DatabaseReader::get_live_input_details(char *label) {
     }
 }
 
-int DatabaseReader::get_n_neurons(char *label) {
+int DatabaseReader::get_n_atoms(char *label) {
     char *sql = sqlite3_mprintf(
         "SELECT no_atoms FROM Application_vertices"
         " WHERE vertex_label = \"%q\"", label);

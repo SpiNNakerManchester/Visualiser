@@ -6,28 +6,27 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
-#include "GridPlot.h"
+#include "GridPlotPartitionable.h"
 #include "../utilities/colour.h"
 #include "../glut_framework/GlutFramework.h"
 
 
-GridPlot::GridPlot(
+GridPlotPartitionable::GridPlotPartitionable(
         int argc, char **argv, int grid_size_x,
         int grid_size_y, bool wait_for_start) {
+
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
-    this->cell_id = 0;
     this->user_pressed_start = !wait_for_start;
     this->simulation_started = false;
     this->database_read = false;
-    this->n_cells = 0;
+
     this->timestep_ms = 0;
     this->plot_time_ms = 0;
     this->grid_size_x = grid_size_x;
     this->grid_size_y = grid_size_y;
+    this->n_cells = grid_size_x * grid_size_y;
     this->latest_time = 0.0;
-
-    this->n_populations_to_read = 1;
 
     this->argc = argc;
     this->argv = argv;
@@ -47,18 +46,18 @@ GridPlot::GridPlot(
     }
 }
 
-void SudokuPlot::main_loop() {
+void GridPlotPartitionable::main_loop() {
     startFramework(argc, argv, "Grid", window_width, window_height,
                    INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
 }
 
-void SudokuPlot::init() {
+void GridPlotPartitionable::init() {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glColor3f(1.0, 1.0, 1.0);
     glShadeModel(GL_SMOOTH);
 }
 
-void SudokuPlot::init_population(
+void GridPlotPartitionable::init_population(
         char *label, int n_cells, float run_time_ms,
         float machine_time_step_ms) {
     std::string label_str = std::string(label);
@@ -67,42 +66,46 @@ void SudokuPlot::init_population(
 
     char *cell_label = (char *) malloc(sizeof(char) * strlen(label));
     strcpy(cell_label, label);
-    this->cell_labels[this->cell_id] = cell_label;
-    this->cell_size_map[this->cell_id] = n_cells;
-    this->label_to_cell_map[label_str] = this->cell_id;
-    this->n_cells += n_cells;
-    this->cell_id += 1;
-
+    this->cell_label = cell_label;
 
     pthread_mutex_lock(&(this->start_mutex));
-    this->n_populations_to_read -= 1;
-    if (this->n_populations_to_read <= 0) {
+    if (this->n_cells == n_cells) {
         this->database_read = true;
         while (!this->user_pressed_start) {
             pthread_cond_wait(&(this->start_condition), &(this->start_mutex));
         }
     }
+    else{
+       fprintf(stderr,
+              "Error vertex to listen to does not have enough elements!\n");
+        exit(-1);
+    }
     pthread_mutex_unlock(&(this->start_mutex));
 }
 
-void SudokuPlot::spikes_start(
-        char *label, SpynnakerLiveSpikesConnection *connection) {
+void GridPlotPartitionable::events_start(
+        char *label, SpiNNakerFrontEndCommonLiveEventsConnection *connection) {
     pthread_mutex_lock(&(this->start_mutex));
     this->simulation_started = true;
     pthread_mutex_unlock(&(this->start_mutex));
 }
 
-void SudokuPlot::receive_spikes(
-        char *label, int time, int n_spikes, int *spikes) {
+void GridPlotPartitionable::receive_events(
+        char *label, int cell_id, int payload) {
+
     pthread_mutex_lock(&(this->point_mutex));
     std::string label_str = std::string(label);
-    for (int i = 0; i < n_spikes; i++) {
-        int cell_id = spikes[i] / (this->neurons_per_number * 9);
-        int neuron_id = spikes[i] % (this->neurons_per_number * 9);
-        fprintf(stderr, "Spike %i, cell %i, neuron %i\n", spikes[i], cell_id, neuron_id);
-        std::pair<int, int> point(time, neuron_id);
-        this->points_to_draw[cell_id].push_back(point);
-    }
+
+    // find coords
+    int x_coord = cell_id % this->grid_size_y;
+    int y_coord = cell_id / this->grid_size_y;
+
+    fprintf(stderr, "Spike %i, cell %i, [%i,%i]\n",
+            events[i], cell_id, x_coord, y_coord);
+
+    std::pair<int, int> point(time, neuron_id);
+    this->points_to_draw[cell_id].push_back(point);
+
     float time_ms = time * this->timestep_ms;
     if (time_ms > this->latest_time) {
         this->latest_time = time_ms;
@@ -113,7 +116,7 @@ void SudokuPlot::receive_spikes(
 //-------------------------------------------------------------------------
 //  Draws a string at the specified coordinates.
 //-------------------------------------------------------------------------
-void SudokuPlot::printgl(float x, float y, void *font_style,
+void GridPlotPartitionable::printgl(float x, float y, void *font_style,
         char* format, ...) {
     va_list arg_list;
     char str[256];
@@ -130,8 +133,8 @@ void SudokuPlot::printgl(float x, float y, void *font_style,
     }
 }
 
-void SudokuPlot::printglstroke(float x, float y, float size, float rotate,
-        char* format, ...) {
+void GridPlotPartitionable::printglstroke(
+        float x, float y, float size, float rotate, char* format, ...) {
     va_list arg_list;
     char str[256];
     int i;
@@ -166,7 +169,7 @@ void check_cell(
     }
 }
 
-void SudokuPlot::display(float time) {
+void GridPlotPartitionable::display(float time) {
     if (glutGetWindow() == this->window) {
 
         glPointSize(1.0);
@@ -202,7 +205,7 @@ void SudokuPlot::display(float time) {
             printgl((window_width / 2) - 120, window_height - 50,
                     GLUT_BITMAP_TIMES_ROMAN_24, prompt);
         } else {
-            char title[] = "Sudoku";
+            char title[] = "Grid";
             printgl((window_width / 2) - 75, window_height - 50,
                     GLUT_BITMAP_TIMES_ROMAN_24, title);
         }
@@ -252,7 +255,7 @@ void SudokuPlot::display(float time) {
                 points_to_draw[cell].pop_front();
             }
 
-            // Count the spikes per number
+            // Count the events per number
             int count[9];
             for (uint32_t i = 0; i < 9; i++) {
                 count[i] = 0;
@@ -312,7 +315,7 @@ void SudokuPlot::display(float time) {
             }
         }
 
-        // Print the spikes
+        // Print the events
         for (uint32_t cell = 0; cell < 81; cell++) {
             uint32_t cell_x = cell % 9;
             uint32_t cell_y = cell / 9;
@@ -363,7 +366,7 @@ void SudokuPlot::display(float time) {
     }
 }
 
-void SudokuPlot::reshape(int width, int height) {
+void GridPlotPartitionable::reshape(int width, int height) {
     if (glutGetWindow() == this->window) {
         fprintf(stderr, "Reshape to %d, %d\n", width, height);
         this->window_width = width;
@@ -382,7 +385,7 @@ void SudokuPlot::reshape(int width, int height) {
     }
 }
 
-void SudokuPlot::keyboardUp(unsigned char key, int x, int y) {
+void GridPlotPartitionable::keyboardUp(unsigned char key, int x, int y) {
     if ((int) key == 32) {
 
         // create and send the eieio command message confirming database
@@ -397,10 +400,10 @@ void SudokuPlot::keyboardUp(unsigned char key, int x, int y) {
     }
 }
 
-void SudokuPlot::safelyshut(void) {
+void GridPlotPartitionable::safelyshut(void) {
     exit(0);                // kill program dead
 }
 
-SudokuPlot::~SudokuPlot() {
+GridPlotPartitionable::~GridPlotPartitionable() {
     // TODO Auto-generated destructor stub
 }

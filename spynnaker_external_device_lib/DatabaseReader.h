@@ -25,11 +25,11 @@ public:
     virtual ~DatabaseReader();
     sqlite3 *get_cursor();
     std::vector<char *> *get_live_output_population_labels();
-    std::map<int, int> *get_key_to_neuron_id_mapping(char* label);
-    std::map<int, int> *get_neuron_id_to_key_mapping(char* label);
+    std::map<int, int> *get_key_to_atom_id_mapping(char* label);
+    std::map<int, int> *get_atom_id_to_key_mapping(char* label);
     ip_tag_info *get_live_output_details(char *label);
     reverse_ip_tag_info *get_live_input_details(char *label);
-    int get_n_neurons(char *label);
+    int get_n_atoms(char *label);
     float get_configuration_parameter_value(char *parameter_name);
     void close_database_connection();
 };

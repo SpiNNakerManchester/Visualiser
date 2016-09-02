@@ -26,6 +26,12 @@ struct label_and_neuron_id {
 // The maximum number of 32-bit keys that will fit in a packet
 const int _MAX_FULL_KEYS_PER_PACKET = 63;
 
+// The maximum number of 32-bit keys and payloads that will fit in a packet
+const int _MAX_FULL_KEYS_PAYLOADS_PER_PACKET = 31;
+
+// The maximum number of 16-bit keys and payloads that will fit in a packet
+const int _MAX_HALF_KEYS_PAYLOADS_PER_PACKET = 42;
+
 // The maximum number of 16-bit keys that will fit in a packet
 const int _MAX_HALF_KEYS_PER_PACKET = 127;
 
