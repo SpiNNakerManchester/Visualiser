@@ -2,12 +2,20 @@
 #define RASTERPLOT_H_
 
 #include "../glut_framework/GlutFramework.h"
+#include "../utilities/GridColourReader.h"
 #include <SpiNNakerFrontEndCommonLiveEventsConnection.h>
 #include <map>
 #include <deque>
 #include <set>
 #include <pthread.h>
 #include <string.h>
+
+//! state_to_draw_struct
+typedef struct state_to_draw_struct {
+    uint32_t cell_id;
+    uint32_t state;
+} state_to_draw_struct;
+
 
 class GridPlotPartitionable : public GlutFramework,
         public EventReceiveCallbackPayloadInterface,
@@ -17,7 +25,7 @@ class GridPlotPartitionable : public GlutFramework,
 public:
     GridPlotPartitionable(
         int argc, char **argv, int grid_size_x, int grid_size_y,
-        bool wait_for_start=true);
+         GridColourReader *colour_reader, bool wait_for_start=true);
     void init();
     void main_loop();
     virtual void init_population(
@@ -44,6 +52,8 @@ private:
     const static int INIT_WINDOW_X = 100;
     const static int INIT_WINDOW_Y = 100;
 
+    GridColourReader *colour_reader;
+
     int argc;
     char **argv;
 
@@ -54,10 +64,10 @@ private:
     int grid_size_y;
     int window_width;
     int window_height;
-    float latest_time;
     std::string cell_label;
+    int points_recieved;
 
-    std::deque<std::pair<int, int> > points_to_draw[81];
+    std::deque<state_to_draw_struct> *states_to_draw;
     pthread_mutex_t point_mutex;
 
     pthread_mutex_t start_mutex;

@@ -7,9 +7,9 @@
 #include <set>
 #include <string.h>
 #include <algorithm>
-#include <SpiNNakerFrontEndCOmmonLiveEventsConnection.h>
+#include <SpiNNakerFrontEndCommonLiveEventsConnection.h>
 #include "main.h"
-#include "utilities/ColourReader.h"
+#include "utilities/GridColourReader.h"
 #include "grid_view/gridPlot.h"
 
 char* get_next_arg(int position, char **argv, int argc){
@@ -37,6 +37,7 @@ int main(int argc, char **argv){
     char* packet_file_path = NULL;
     int grid_size_x = 0;
     int grid_size_y = 0;
+    char* colour_file_path = NULL;
     char* remote_host = NULL;
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
@@ -57,9 +58,12 @@ int main(int argc, char **argv){
         if (strcmp(argv[arg_index], "-remote_host") == 0) {
             remote_host = get_next_arg(arg_index, argv, argc);
         }
+        if (strcmp(argv[arg_index], "-colour_map") == 0){
+            colour_file_path = get_next_arg(arg_index, argv, argc);
+        }
     }
 
-    if (grid_size_x <= 0 || grid_size_y <= 0) {
+    if (grid_size_x <= 0 || grid_size_y <= 0 || colour_file_path == NULL) {
         printf("Usage is \n"
                " -grid_size_x "
                "<the grid size in the x axis that this visualiser is "
@@ -78,20 +82,22 @@ int main(int argc, char **argv){
         return 1;
     }
 
-    std::vector<char *> labels;
+    // Get the details of the populations to be visualised
+    GridColourReader *colour_reader = new GridColourReader(colour_file_path);
+    std::vector<char *> *labels = colour_reader->get_labels();
 
-    char *label = (char *) malloc(sizeof(char) * 7);
-    sprintf(label, "Cells");
-    labels.push_back(label);
-
-    SpiNNakerFrontEndCOmmonLiveEventsConnection connection(
+    // create connection for the reciving of data items
+    SpiNNakerFrontEndCommonLiveEventsConnection connection(
         (int) labels.size(), &(labels[0]), 0, (char **) NULL,
         (char *) NULL, hand_shake_listen_port_no, false);
 
     // Create the visualiser
-    GridPlotPartitionable plotter(argc, argv, grid_size_x, grid_size_y,
-                       absolute_file_path == NULL);
-    for (int i = 0; i < labels.size(); i++) {
+    GridPlotPartitionable plotter(
+        argc, argv, grid_size_x, grid_size_y, colour_reader,
+        absolute_file_path == NULL);
+
+    // set up callbacks
+    for (int i = 0; i < labels->size(); i++) {
         connection.add_initialize_callback(labels[i], &plotter);
         connection.add_receive_callback(labels[i], &plotter);
         connection.add_start_callback(labels[i], &plotter);
@@ -99,6 +105,10 @@ int main(int argc, char **argv){
     if (absolute_file_path != NULL) {
         connection.set_database(absolute_file_path);
     }
+
+    // start main interface
     plotter.main_loop();
+
+    // end correctly
     return 0;
 }

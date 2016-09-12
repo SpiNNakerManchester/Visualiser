@@ -6,14 +6,15 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
+#include <deque>
 #include "GridPlotPartitionable.h"
 #include "../utilities/colour.h"
 #include "../glut_framework/GlutFramework.h"
 
 
 GridPlotPartitionable::GridPlotPartitionable(
-        int argc, char **argv, int grid_size_x,
-        int grid_size_y, bool wait_for_start) {
+        int argc, char **argv, int grid_size_x, int grid_size_y,
+        GridColourReader *colour_reader, bool wait_for_start) {
 
     this->window_width = INIT_WINDOW_WIDTH;
     this->window_height = INIT_WINDOW_HEIGHT;
@@ -22,15 +23,21 @@ GridPlotPartitionable::GridPlotPartitionable(
     this->database_read = false;
 
     this->timestep_ms = 0;
+    this->points_recieved = 0;
     this->plot_time_ms = 0;
     this->grid_size_x = grid_size_x;
     this->grid_size_y = grid_size_y;
     this->n_cells = grid_size_x * grid_size_y;
-    this->latest_time = 0.0;
+    this->colour_reader = colour_reader;
 
     this->argc = argc;
     this->argv = argv;
 
+    // define queue for the incoming state changes
+    this->states_to_draw = new std::deque<state_to_draw_struct>(
+        this->grid_size_x * this->grid_size_y);
+
+    // create mutexs
     if (pthread_mutex_init(&(this->start_mutex), NULL) == -1) {
         fprintf(stderr, "Error initializing start mutex!\n");
         exit(-1);
@@ -100,15 +107,18 @@ void GridPlotPartitionable::receive_events(
     int x_coord = cell_id % this->grid_size_y;
     int y_coord = cell_id / this->grid_size_y;
 
-    fprintf(stderr, "Spike %i, cell %i, [%i,%i]\n",
-            events[i], cell_id, x_coord, y_coord);
+    fprintf(stderr, "cell %i, [%i,%i]\n", cell_id, x_coord, y_coord);
 
-    std::pair<int, int> point(time, neuron_id);
-    this->points_to_draw[cell_id].push_back(point);
+    state_to_draw_struct *data_item;
+    data_item->cell_id = cell_id;
+    data_item->state = payload;
 
-    float time_ms = time * this->timestep_ms;
-    if (time_ms > this->latest_time) {
-        this->latest_time = time_ms;
+    this->states_to_draw->push_back(*data_item);
+    this->points_recieved ++;
+
+    if( this->points_recieved >= this->grid_size_y * this->grid_size_x){
+        this->timestep_ms ++;
+        this->points_recieved = 0;
     }
     pthread_mutex_unlock(&(this->point_mutex));
 }
@@ -160,15 +170,6 @@ void GridPlotPartitionable::printglstroke(
     glPopMatrix();
 }
 
-void check_cell(
-        int cell_values[], bool cell_correct[], int x, int y,
-        int row, int column) {
-    int value = cell_values[(y * 9) + x];
-    if (value == cell_values[(row * 9) + column]) {
-        cell_correct[(y * 9) + x] = false;
-    }
-}
-
 void GridPlotPartitionable::display(float time) {
     if (glutGetWindow() == this->window) {
 
@@ -178,19 +179,13 @@ void GridPlotPartitionable::display(float time) {
         glClear(GL_COLOR_BUFFER_BIT);
         glColor4f(0.0, 0.0, 0.0, 1.0);
 
-        float cell_width = (window_width - (2 * WINDOW_BORDER)) / 9.0;
-        float cell_height = (window_height - (2 * WINDOW_BORDER)) / 9.0;
+        // figure out the cell sizes based off the window size
+        float cell_width = (window_width -
+                            (2 * WINDOW_BORDER)) / this->grid_size_x;
+        float cell_height = (window_height -
+                             (2 * WINDOW_BORDER)) / this->grid_size_y;
 
-        float end = this->latest_time;
-        float start = end - this->ms_per_bin;
-        if (start < 0.0) {
-            start = 0.0;
-            end = start + this->ms_per_bin;
-        }
-
-        float x_spacing = (float) cell_width /
-            ((end - start) / this->timestep_ms);
-
+        // handle the database connection stuff
         pthread_mutex_lock(&(this->start_mutex));
         if (!this->database_read) {
             char prompt[] = "Waiting for database to be ready...";
@@ -211,10 +206,10 @@ void GridPlotPartitionable::display(float time) {
         }
         pthread_mutex_unlock(&(this->start_mutex));
 
-        // Draw the cells
+        // Draw the grid lines
         glColor4f(0.0, 0.0, 0.0, 1.0);
-        for (uint32_t i = 0; i <= 9; i++) {
-            if (i % 3 == 0) {
+        for (uint32_t i = 0; i <= this->grid_size_x; i++) {
+            if (i % this->grid_size_x == 0) {
                 glLineWidth(3.0);
             } else {
                 glLineWidth(1.0);
@@ -226,8 +221,8 @@ void GridPlotPartitionable::display(float time) {
             glEnd();
         }
 
-        for (uint32_t i = 0; i <= 9; i++) {
-            if (i % 3 == 0) {
+        for (uint32_t i = 0; i <= this->grid_size_y; i++) {
+            if (i % this->grid_size_y == 0) {
                 glLineWidth(3.0);
             } else {
                 glLineWidth(1.0);
@@ -239,14 +234,10 @@ void GridPlotPartitionable::display(float time) {
             glEnd();
         }
 
-        int start_tick = start / this->timestep_ms;
-        int end_tick = end / this->timestep_ms;
-
         pthread_mutex_lock(&(this->point_mutex));
 
         // Work out the cell values
         int cell_value[81];
-        float cell_prob[81];
         for (uint32_t cell = 0; cell < 81; cell++) {
 
             // Strip off items that are no longer needed
@@ -273,47 +264,9 @@ void GridPlotPartitionable::display(float time) {
                         stderr, "Neuron id %d out of range\n", iter->second);
                 }
             }
-
-            // Work out the probability of a given number in a given cell
-            int max_prob_number = 0;
-            float max_prob = 0;
-            for (uint32_t i = 0; i < 9; i++) {
-                if (count[i] > 0) {
-                    float prob = (float) count[i] / (float) total;
-                    if (prob > max_prob) {
-                        max_prob = prob;
-                        max_prob_number = i + 1;
-                    }
-                }
-            }
-            cell_value[cell] = max_prob_number;
-            cell_prob[cell] = max_prob;
         }
 
-        // Work out the correctness of each cell
-        bool cell_valid[81];
-        for (uint32_t cell = 0; cell < 81; cell++) {
-            uint32_t x = cell % 9;
-            uint32_t y = cell / 9;
-            cell_valid[cell] = true;
-            for (int row = 0; row < 9; row++) {
-                if (row != y) {
-                    check_cell(cell_value, cell_valid, x, y, row, x);
-                }
-            }
-            for (int col = 0; col < 9; col++) {
-                if (col != x) {
-                    check_cell(cell_value, cell_valid, x, y, y, col);
-                }
-            }
-            for (int row = 3 * (y / 3); row < (3 * ((y / 3) + 1)); row++) {
-                for (int col = 3 * (x / 3); col < (3 * ((x / 3) + 1)); col++) {
-                    if (x != col && y != row) {
-                        check_cell(cell_value, cell_valid, x, y, row, col);
-                    }
-                }
-            }
-        }
+
 
         // Print the events
         for (uint32_t cell = 0; cell < 81; cell++) {
