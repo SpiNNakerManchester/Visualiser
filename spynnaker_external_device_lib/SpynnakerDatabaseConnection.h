@@ -18,10 +18,18 @@ public:
     virtual ~StartCallbackInterface() {};
 };
 
+class PauseStopCallbackInterface {
+public:
+    virtual void pause_stop_callback() = 0;
+    virtual ~PauseStopCallbackInterface() {};
+};
+
+
 class SpynnakerDatabaseConnection : public UDPConnection, private Threadable {
 public:
     SpynnakerDatabaseConnection(
         StartCallbackInterface *start_callback=NULL,
+        PauseStopCallbackInterface *pause_stop_callback=NULL,
         char *local_host=NULL, int local_port=0);
     void add_database_callback(DatabaseCallbackInterface *callback);
     void set_database(char *database_path);
@@ -33,7 +41,9 @@ protected:
 private:
     std::vector<DatabaseCallbackInterface *> database_callbacks;
     StartCallbackInterface *start_callback;
+    PauseStopCallbackInterface *pause_stop_callback;
     bool database_path_received;
+    bool running;
 };
 
 #endif /* _SPYNNAKER_DATABASE_CONNECTION_H_ */

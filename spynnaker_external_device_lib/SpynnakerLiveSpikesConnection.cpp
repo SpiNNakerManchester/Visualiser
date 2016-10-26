@@ -10,8 +10,8 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         int n_receive_labels, char **receive_labels,
         int n_send_labels, char **send_labels,
         char *local_host, int local_port, bool wait_for_start)
-        : SpynnakerDatabaseConnection(this, local_host, local_port),
-          StartCallbackInterface() {
+        : SpynnakerDatabaseConnection(this, this, local_host, local_port),
+          StartCallbackInterface(), PauseStopCallbackInterface() {
     this->add_database_callback(this);
     for (int i = 0; i < n_receive_labels; i++) {
         std::string receive_label(receive_labels[i]);
@@ -21,12 +21,16 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         this->start_callbacks[receive_label] =
             std::vector<SpikesStartCallbackInterface *>();
         this->waiting_for_start[receive_label] = wait_for_start;
+        this->pause_stop_callbacks[receive_label] =
+            std::vector<SpikesPauseStopCallbackInterface *>();
     }
     for (int i = 0; i < n_send_labels; i++) {
         std::string send_label(send_labels[i]);
         this->send_labels.push_back(send_labels[i]);
         this->start_callbacks[send_label] =
             std::vector<SpikesStartCallbackInterface *>();
+        this->pause_stop_callbacks[send_label] =
+            std::vector<SpikesPauseStopCallbackInterface *>();
         this->waiting_for_start[send_label] = wait_for_start;
     }
     this->n_waiting_for_start = 0;
@@ -58,6 +62,12 @@ void SpynnakerLiveSpikesConnection::add_start_callback(
         char *label, SpikesStartCallbackInterface *start_callback) {
     this->start_callbacks[std::string(label)].push_back(
         start_callback);
+}
+
+void SpynnakerLiveSpikesConnection::add_pause_stop_callback(
+        char *label, SpikesPauseStopCallbackInterface *pause_stop_callback) {
+    this->pause_stop_callbacks[std::string(label)].push_back(
+        pause_stop_callback);
 }
 
 void SpynnakerLiveSpikesConnection::add_wait_for_start(char *label) {
@@ -165,6 +175,21 @@ struct start_callback_info {
     }
 };
 
+struct pause_stop_callback_info {
+    SpikesPauseStopCallbackInterface *pause_stop_callback;
+    char *label;
+    SpynnakerLiveSpikesConnection *connection;
+
+    pause_stop_callback_info(
+            SpikesPauseStopCallbackInterface *pause_stop_callback,
+            char *label, SpynnakerLiveSpikesConnection *connection) {
+        this->pause_stop_callback = pause_stop_callback;
+        this->label = label;
+        this->connection = connection;
+    }
+};
+
+
 void SpynnakerLiveSpikesConnection::start_callback() {
     for (std::map<
                 std::string,
@@ -184,6 +209,7 @@ void SpynnakerLiveSpikesConnection::start_callback() {
     }
 }
 
+
 void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
     struct start_callback_info *start_callback_info =
         (struct start_callback_info *) start_info;
@@ -191,6 +217,37 @@ void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
         start_callback_info->label, start_callback_info->connection);
     return NULL;
 }
+
+
+void SpynnakerLiveSpikesConnection::pause_stop_callback() {
+    for (std::map<
+                std::string,
+                std::vector<SpikesPauseStopCallbackInterface *> >::iterator
+                    iter = this->pause_stop_callbacks.begin();
+            iter != this->pause_stop_callbacks.end(); iter++) {
+        for (int i = 0; i < iter->second.size(); i++) {
+            pthread_t callback_thread;
+            char *label = (char *) iter->first.c_str();
+            SpikesPauseStopCallbackInterface *callback = iter->second[i];
+            struct pause_stop_callback_info *pause_stop_info =
+                new struct pause_stop_callback_info(callback, label, this);
+            pthread_create(
+                &callback_thread, NULL, _call_pause_stop_callback,
+                (void *) pause_stop_info);
+        }
+    }
+}
+
+
+void *SpynnakerLiveSpikesConnection::_call_pause_stop_callback(
+        void *pause_stop_info) {
+    struct pause_stop_callback_info *pause_stop_callback_info =
+        (struct pause_stop_callback_info *) pause_stop_info;
+    pause_stop_callback_info->pause_stop_callback->spikes_stop(
+        pause_stop_callback_info->label, pause_stop_callback_info->connection);
+    return NULL;
+}
+
 
 void SpynnakerLiveSpikesConnection::receive_packet_callback(
         EIEIOMessage *message) {
