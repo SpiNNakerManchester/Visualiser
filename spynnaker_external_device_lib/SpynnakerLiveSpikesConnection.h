@@ -54,10 +54,18 @@ public:
     virtual ~SpikesStartCallbackInterface() {};
 };
 
+class SpikesPauseStopCallbackInterface {
+public:
+    virtual void spikes_stop(
+        char *label, SpynnakerLiveSpikesConnection *connection) = 0;
+    virtual ~SpikesPauseStopCallbackInterface() {};
+};
+
 
 class SpynnakerLiveSpikesConnection :
         public SpynnakerDatabaseConnection, public DatabaseCallbackInterface,
-        public StartCallbackInterface, public PacketReceiveCallbackInterface {
+        public StartCallbackInterface, public PacketReceiveCallbackInterface,
+        public PauseStopCallbackInterface {
 public:
     SpynnakerLiveSpikesConnection(
         int n_receive_labels=0, char **receive_labels=NULL,
@@ -71,6 +79,8 @@ public:
     void add_start_callback(
         char *label, SpikesStartCallbackInterface *start_callback);
     void add_wait_for_start(char *label);
+    void add_pause_stop_callback(
+        char *label, SpikesPauseStopCallbackInterface *pause_stop_callback);
     void send_spike(
         char *label, int neuron_id, bool send_full_keys=false);
     void send_spikes(
@@ -79,10 +89,12 @@ public:
     ~SpynnakerLiveSpikesConnection();
     virtual void read_database_callback(DatabaseReader *reader);
     virtual void start_callback();
+    virtual void pause_stop_callback();
     virtual void receive_packet_callback(EIEIOMessage *message);
 
 private:
     static void *_call_start_callback(void *start_callback_info);
+    static void *_call_pause_stop_callback(void *pause_stop_info);
 
     std::vector<char *> receive_labels;
     std::vector<char *> send_labels;
@@ -95,6 +107,8 @@ private:
              SpikeReceiveCallbackInterface *> > live_spike_callbacks;
     std::map<std::string, std::vector<
              SpikesStartCallbackInterface *> > start_callbacks;
+    std::map<std::string, std::vector<
+             SpikesPauseStopCallbackInterface *> > pause_stop_callbacks;
 
     pthread_cond_t start_condition;
     pthread_mutex_t start_mutex;
