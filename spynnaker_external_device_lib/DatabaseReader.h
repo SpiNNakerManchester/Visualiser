@@ -33,11 +33,9 @@ public:
     float get_configuration_parameter_value(char *parameter_name);
     void close_database_connection();
 private:
-    void DatabaseReader::prepare(sqlite3_stmt *&statement, const char *sql);
-    void DatabaseReader::bind(sqlite3_stmt *&statement, int index,
-	    const char *value);
-    void DatabaseReader::step1(sqlite3_stmt *&statement, const char *msg,
-	    const char *value);
+    void prepare(sqlite3_stmt *&statement, const char *sql);
+    void bind(sqlite3_stmt *&statement, int index, const char *value);
+    void step1(sqlite3_stmt *&statement, const char *msg, const char *value);
 };
 
 #endif /* _DATABASE_READER_H_ */
