@@ -7,7 +7,7 @@
 #else
 #include <windows.h>
 #include <ws2tcpip.h>
-#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#define bzero(b,len) 	 (memset((b), '\0', (len)), (void) 0)
 #define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
 #define close(sock)
 
@@ -24,7 +24,7 @@ typedef unsigned short ushort;
 
 static inline struct sockaddr *get_address(char *ip_address, int port) {
     struct hostent *lookup_address = gethostbyname(ip_address);
-    if (lookup_address == NULL) {
+    if (lookup_address == nullptr) {
         throw "local_host address not found";
     }
     struct sockaddr_in *local_address =
@@ -41,15 +41,19 @@ static inline struct sockaddr *get_address(char *ip_address, int port) {
 class UDPConnection {
 
 public:
-    UDPConnection(int local_port=0, char *local_host=NULL, int remote_port=0,
-                  char *remote_host=NULL);
+    UDPConnection(int local_port=0, char *local_host=nullptr, int remote_port=0,
+                  char *remote_host=nullptr);
     ~UDPConnection();
     int receive_data(unsigned char *data, int length);
     int receive_data_with_address(unsigned char *data, int length,
                                   struct sockaddr *address);
+    int receive_data_with_address(unsigned char *data, int length,
+                                  struct sockaddr_in *address);
     void send_data(unsigned char *data, int length);
     void send_data_to(unsigned char *data, int length,
                       struct sockaddr* address);
+    void send_data_to(unsigned char *data, int length,
+                      struct sockaddr_in* address);
 
 private:
     int sock;

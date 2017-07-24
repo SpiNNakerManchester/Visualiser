@@ -16,6 +16,7 @@ public:
 class ConnectionListener : public Threadable {
 public:
     ConnectionListener(UDPConnection *connection);
+    virtual ~ConnectionListener();
     void add_receive_packet_callback(
         PacketReceiveCallbackInterface *packet_callback);
     void finish();
@@ -29,7 +30,9 @@ private:
         Reader(ConnectionListener *listener);
         void run();
         ConnectionListener *listener;
-
+    private:
+        unsigned char *getDataToProcess(void);
+        void releaseProcessedData(unsigned char *data);
     };
 
     Reader *reader;
@@ -42,6 +45,9 @@ private:
     std::queue<unsigned char *> free_data;
     std::queue<unsigned char *> data_to_process;
     std::set<PacketReceiveCallbackInterface*> _callbacks;
+
+    unsigned char *getFreeData(void);
+    void postReceivedData(unsigned char *data);
 };
 
 #endif // _CONNECTION_LISTENER_H_

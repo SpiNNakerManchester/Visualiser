@@ -90,7 +90,7 @@ int UDPConnection::receive_data(unsigned char *data, int length) {
 }
 
 int UDPConnection::receive_data_with_address(unsigned char *data, int length,
-                                             struct sockaddr *address) {
+                                             sockaddr *address) {
     int address_length = sizeof(*address);
     int received_length = recvfrom(this->sock, (char *) data, length, 0,
                                    address, (socklen_t *) &address_length);
@@ -98,6 +98,11 @@ int UDPConnection::receive_data_with_address(unsigned char *data, int length,
         throw "Error receiving data";
     }
     return received_length;
+}
+
+int UDPConnection::receive_data_with_address(unsigned char *data, int length,
+                                             sockaddr_in *address) {
+    return receive_data_with_address(data, length, (sockaddr *) address);
 }
 
 void UDPConnection::send_data(unsigned char *data, int length) {
@@ -112,6 +117,11 @@ void UDPConnection::send_data_to(unsigned char *data, int length,
                (const struct sockaddr *) address, sizeof(*address)) < 0) {
         throw "Error sending data";
     }
+}
+
+void UDPConnection::send_data_to(unsigned char *data, int length,
+                                 sockaddr_in* address) {
+    send_data_to(data, length, (sockaddr *) address);
 }
 
 UDPConnection::~UDPConnection() {

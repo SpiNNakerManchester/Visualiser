@@ -28,7 +28,7 @@ void SpynnakerDatabaseConnection::run() {
         unsigned char data[MAX_PACKET_SIZE];
         struct sockaddr_in address;
         int n_bytes = this->receive_data_with_address(
-            data, MAX_PACKET_SIZE - 1, (struct sockaddr *) &address);
+            data, MAX_PACKET_SIZE - 1, &address);
         if (!database_path_received) {
             data[n_bytes] = '\0';
             char *database_path = (char *) &data[2];
@@ -39,8 +39,7 @@ void SpynnakerDatabaseConnection::run() {
             unsigned char eieio_response[2];
             eieio_response[1] = (1 << 6);
             eieio_response[0] = 1;
-            this->send_data_to(
-                eieio_response, 2, (struct sockaddr *) &address);
+            this->send_data_to(eieio_response, 2, &address);
             database_path_received = true;
         }
 
@@ -65,7 +64,6 @@ void SpynnakerDatabaseConnection::run() {
 }
 
 void SpynnakerDatabaseConnection::set_database(char *database_path) {
-
     database_path_received = true;
 
     // Call the callback function with the reader
