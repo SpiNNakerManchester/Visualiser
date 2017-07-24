@@ -21,10 +21,10 @@ all: $(APP)
 
 build/%.o: %.cpp
 	-mkdir -p $(dir $@)
-	g++ -I$(CURRENT_DIR) $(CPPFLAGS) -o $@ -c $<
+	$(CXX) -I$(CURRENT_DIR) $(CPPFLAGS) -o $@ -c $<
 
 $(APP): $(OBJS)
-	g++ $(PRE_LDFLAGS) -L$(CURRENT_DIR) -o $@ $^ $(LIBS)
+	$(CXX) $(PRE_LDFLAGS) -L$(CURRENT_DIR) -o $@ $^ $(LIBS)
 
 clean:
 	rm -rf build

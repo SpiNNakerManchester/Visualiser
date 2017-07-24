@@ -16,7 +16,7 @@ all: libspynnaker_external_device_lib.a
 
 build/%.o: %.cpp
 	-mkdir -p $(dir $@)
-	g++ $(CPPFLAGS) -o $@ -c $<
+	$(CXX) $(CPPFLAGS) -o $@ -c $<
 	
 libspynnaker_external_device_lib.a: $(OBJS)
 	$(RM) $@
