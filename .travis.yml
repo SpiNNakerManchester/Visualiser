@@ -1,6 +1,9 @@
 language: cpp
-script: make
+compiler:
+  - clang
+  - gcc
 addons:
   apt:
     packages:
       - freeglut3-dev
+script: make
