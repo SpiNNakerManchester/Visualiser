@@ -49,7 +49,7 @@ SudokuPlot::SudokuPlot(
 
 void SudokuPlot::main_loop() {
     startFramework(argc, argv, "Sudoku", window_width, window_height,
-                   INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
+                   INIT_WINDOW_X, INIT_WINDOW_Y, double(FRAMES_PER_SECOND));
 }
 
 void SudokuPlot::init() {

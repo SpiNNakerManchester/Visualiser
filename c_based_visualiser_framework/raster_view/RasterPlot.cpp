@@ -49,7 +49,7 @@ RasterPlot::RasterPlot(
 
 void RasterPlot::main_loop() {
     startFramework(argc, argv, "Raster Plot", window_width, window_height,
-                   INIT_WINDOW_X, INIT_WINDOW_Y, FRAMES_PER_SECOND);
+                   INIT_WINDOW_X, INIT_WINDOW_Y, double(FRAMES_PER_SECOND));
 }
 
 void RasterPlot::init() {
