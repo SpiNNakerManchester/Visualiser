@@ -1,2 +1,6 @@
 language: cpp
 script: make
+addons:
+  apt:
+    packages:
+      - freeglut3-dev
