@@ -8,7 +8,9 @@ class Threadable {
 
 public:
 
-    Threadable() {}
+    Threadable() {
+	memset(&this->_thread, 0, sizeof this->_thread);
+    }
 
     virtual ~Threadable() {}
 

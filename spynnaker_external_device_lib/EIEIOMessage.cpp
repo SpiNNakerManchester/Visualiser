@@ -9,6 +9,7 @@
 // build a basic eieio element
 EIEIOElement::EIEIOElement(int key) {
     this->_key = key;
+    this->_payload = 0;
     this->_has_payload = false;
 }
 
