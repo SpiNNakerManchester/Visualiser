@@ -257,8 +257,7 @@ void SudokuPlot::display(float time) {
                 count[i] = 0;
             }
             int total = 0;
-            for (std::deque<std::pair<int, int> >::iterator iter =
-                    points_to_draw[cell].begin();
+            for (auto iter = points_to_draw[cell].begin();
                     iter != points_to_draw[cell].end(); ++iter) {
                 int number = iter->second / this->neurons_per_number;
                 if (number < 9) {
@@ -333,12 +332,11 @@ void SudokuPlot::display(float time) {
                 glColor4f(1.0, cell_sat, cell_sat, 1.0);
             }
 
-            for (std::deque<std::pair<int, int> >::iterator iter =
-                    points_to_draw[cell].begin();
+            for (auto iter = points_to_draw[cell].begin();
                     iter != points_to_draw[cell].end(); ++iter) {
-                float x_value = ((iter->first - start_tick) * x_spacing)
-                                 + x_start;
-                float y_value = (iter->second * y_spacing) + y_start;
+                float x_value =
+                	(iter->first - start_tick) * x_spacing + x_start;
+                float y_value = iter->second * y_spacing + y_start;
                 glVertex2f(x_value, y_value);
             }
 
