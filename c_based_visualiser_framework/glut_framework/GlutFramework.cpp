@@ -97,10 +97,6 @@ void GlutFramework::specialKeyboardUp( int key, int x, int y ) {
 void GlutFramework::init() {
 }
 
-void GlutFramework::setInstance() {
-    instance = this;
-}
-
 void GlutFramework::run() {
     if(frameRateTimer.isStopped()) {
         frameRateTimer.start();
@@ -131,6 +127,14 @@ void GlutFramework::displayFramework() {
     elapsedTimeInSeconds = displayTimer.getElapsedSeconds();
     display(elapsedTimeInSeconds);
     displayTimer.start();
+}
+
+// ***************************************************
+// ** Used to configure the Glut function callbacks **
+// ***************************************************
+
+void GlutFramework::setInstance() {
+    instance = this;
 }
 
 // ******************************************************************

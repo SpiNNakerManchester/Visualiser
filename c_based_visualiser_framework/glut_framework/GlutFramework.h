@@ -140,13 +140,6 @@ public:
     virtual void specialKeyboardUp( int key, int x, int y );
 
     /**
-     * The instance will be set when the framework is started, this step
-     * is necessary to initialize the static instance that is used for the
-     * object oriented wrapper calls
-     */
-    void setInstance();
-
-    /**
      * The run method is called by GLUT and contains the logic to set the
      * framerate of the application.
      */
@@ -158,6 +151,15 @@ public:
      */
     void displayFramework();
 
+protected:
+    /**
+     * The instance will be set when the framework is started, this step
+     * is necessary to initialize the static instance that is used for the
+     * object oriented wrapper calls
+     */
+    void setInstance();
+
+private:
     // ** Static functions which are passed to GLUT function callbacks **
     static void displayWrapper();
     static void reshapeWrapper(int width, int height);
