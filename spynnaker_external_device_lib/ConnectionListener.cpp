@@ -3,30 +3,30 @@
 #include <stdio.h>
 
 ConnectionListener::ConnectionListener(UDPConnection* connection) {
-    this->_connection = connection;
-    if (pthread_mutex_init(&this->free_data_mutex, NULL) == -1) {
+    _connection = connection;
+    if (pthread_mutex_init(&free_data_mutex, NULL) == -1) {
         fprintf(stderr, "Error initializing free data mutex\n");
         exit(-1);
     }
-    if (pthread_mutex_init(&this->data_to_process_mutex, NULL) == -1) {
+    if (pthread_mutex_init(&data_to_process_mutex, NULL) == -1) {
         fprintf(stderr, "Error initializing data to process mutex\n");
         exit(-1);
     }
-    if (pthread_cond_init(&this->free_data_condition, NULL) == -1) {
+    if (pthread_cond_init(&free_data_condition, NULL) == -1) {
         fprintf(stderr, "Error initializing free data condition\n");
         exit(-1);
     }
-    if (pthread_cond_init(&this->data_to_process_condition, NULL) == -1) {
+    if (pthread_cond_init(&data_to_process_condition, NULL) == -1) {
         fprintf(stderr, "Error initializing data to process condition\n");
         exit(-1);
     }
     for (int i = 0; i < 256; i++) {
-        this->free_data.push(
+        free_data.push(
             (unsigned char *) malloc(EIEIOMessage::get_max_size()));
     }
-    this->_done = false;
-    this->reader = new Reader(this);
-    this->reader->start();
+    _done = false;
+    reader = new Reader(this);
+    reader->start();
 }
 
 ConnectionListener::~ConnectionListener() {
@@ -35,50 +35,49 @@ ConnectionListener::~ConnectionListener() {
 
 unsigned char *ConnectionListener::getFreeData() {
     unsigned char *data = nullptr;
-    pthread_mutex_lock(&this->free_data_mutex);
+    pthread_mutex_lock(&free_data_mutex);
     try{
-        while (this->free_data.empty()) {
-            pthread_cond_wait(
-                &this->free_data_condition, &this->free_data_mutex);
+        while (free_data.empty()) {
+            pthread_cond_wait(&free_data_condition, &free_data_mutex);
         }
-        data = this->free_data.front();
-        this->free_data.pop();
+        data = free_data.front();
+        free_data.pop();
     } catch (std::exception& e) {
-        if (!this->_done) {
+        if (!_done) {
             printf("thrown a error \n");
             std::cerr << "exception caught: " << e.what() << '\n';
         }
     }
-    pthread_mutex_unlock(&this->free_data_mutex);
+    pthread_mutex_unlock(&free_data_mutex);
     return data;
 }
 
 void ConnectionListener::postReceivedData(unsigned char *data) {
-    pthread_mutex_lock(&this->data_to_process_mutex);
+    pthread_mutex_lock(&data_to_process_mutex);
     try {
-	this->data_to_process.push(data);
-	pthread_cond_signal(&this->data_to_process_condition);
+	data_to_process.push(data);
+	pthread_cond_signal(&data_to_process_condition);
     } catch (std::exception& e) {
-        if (!this->_done) {
+        if (!_done) {
             printf("thrown a error \n");
             std::cerr << "exception caught: " << e.what() << '\n';
         }
     }
-    pthread_mutex_unlock(&this->data_to_process_mutex);
+    pthread_mutex_unlock(&data_to_process_mutex);
 }
 
 void ConnectionListener::run() {
-    while (!this->_done) {
+    while (!_done) {
 	unsigned char *data = getFreeData();
 	if (data == nullptr)
 	    continue;
         try{
-            int length = this->_connection->receive_data(
+            int length = _connection->receive_data(
                 data, EIEIOMessage::get_max_size());
             // TODO Check if the length of the received data is sensible
             postReceivedData(data);
         } catch (std::exception& e) {
-            if (!this->_done) {
+            if (!_done) {
                 printf("thrown a error \n");
                 std::cerr << "exception caught: " << e.what() << '\n';
             }
@@ -91,34 +90,34 @@ ConnectionListener::Reader::Reader(ConnectionListener *listener) {
 }
 
 unsigned char *ConnectionListener::Reader::getDataToProcess() {
-    pthread_mutex_lock(&this->listener->data_to_process_mutex);
-    while (this->listener->data_to_process.empty()) {
-        pthread_cond_wait(&this->listener->data_to_process_condition,
-                          &this->listener->data_to_process_mutex);
+    pthread_mutex_lock(&listener->data_to_process_mutex);
+    while (listener->data_to_process.empty()) {
+        pthread_cond_wait(&listener->data_to_process_condition,
+                          &listener->data_to_process_mutex);
     }
 
-    unsigned char *data = this->listener->data_to_process.front();
-    this->listener->data_to_process.pop();
+    unsigned char *data = listener->data_to_process.front();
+    listener->data_to_process.pop();
 
-    pthread_mutex_unlock(&this->listener->data_to_process_mutex);
+    pthread_mutex_unlock(&listener->data_to_process_mutex);
     return data;
 }
 
 void ConnectionListener::Reader::releaseProcessedData(unsigned char *data) {
-    pthread_mutex_lock(&this->listener->free_data_mutex);
-    this->listener->free_data.push(data);
-    pthread_cond_signal(&this->listener->free_data_condition);
-    pthread_mutex_unlock(&this->listener->free_data_mutex);
+    pthread_mutex_lock(&listener->free_data_mutex);
+    listener->free_data.push(data);
+    pthread_cond_signal(&listener->free_data_condition);
+    pthread_mutex_unlock(&listener->free_data_mutex);
 }
 
 void ConnectionListener::Reader::run() {
-    while (!this->listener->_done) {
+    while (!listener->_done) {
         unsigned char *data = getDataToProcess();
 
         EIEIOMessage* message = new EIEIOMessage(data, 0);
         // send message to receiver
-        for (auto iterator = this->listener->_callbacks.begin();
-                iterator != this->listener->_callbacks.end();
+        for (auto iterator = listener->_callbacks.begin();
+                iterator != listener->_callbacks.end();
                 ++iterator) {
              (*iterator)->receive_packet_callback(message);
         }
@@ -129,9 +128,9 @@ void ConnectionListener::Reader::run() {
 
 void ConnectionListener::add_receive_packet_callback(
         PacketReceiveCallbackInterface *packet_callback) {
-    this->_callbacks.insert(packet_callback);
+    _callbacks.insert(packet_callback);
 }
 
 void ConnectionListener::finish() {
-    this->_done = true;
+    _done = true;
 }

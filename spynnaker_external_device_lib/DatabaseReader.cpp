@@ -17,28 +17,26 @@ static inline char *get_column_string_copy(sqlite3_stmt *compiled_statement,
 DatabaseReader::DatabaseReader(char *database_path) {
     fprintf(stderr, "Reading database %s\n", database_path);
 
-    int rc = sqlite3_open(database_path, &this->db);
+    int rc = sqlite3_open(database_path, &db);
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "Can't open database: %s\n",
-        	sqlite3_errmsg(this->db));
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 	exit(EXIT_FAILURE);
     }
     fprintf(stderr, "Opened database successfully\n");
 }
 
 DatabaseReader::~DatabaseReader() {
-    this->close_database_connection();
+    close_database_connection();
 }
 
 sqlite3 *DatabaseReader::get_cursor() {
-    return this->db;
+    return db;
 }
 
 void DatabaseReader::prepare(sqlite3_stmt *&statement, const char *sql) {
-    if (sqlite3_prepare_v2(this->db, sql, -1, &statement, NULL) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, sql, -1, &statement, NULL) != SQLITE_OK) {
         fprintf(stderr, "Error reading database: %i: %s\n",
-                sqlite3_errcode(this->db),
-                sqlite3_errmsg(this->db));
+                sqlite3_errcode(db), sqlite3_errmsg(db));
         exit(EXIT_FAILURE);
     }
 }
@@ -47,8 +45,7 @@ void DatabaseReader::bind(sqlite3_stmt *&statement, int index,
 	const char *value) {
     if (sqlite3_bind_text(statement, 1, value, -1, SQLITE_STATIC) != SQLITE_OK) {
         fprintf(stderr, "Error binding value to statement: %i: %s\n",
-        	sqlite3_errcode(this->db),
-		sqlite3_errmsg(this->db));
+        	sqlite3_errcode(db), sqlite3_errmsg(db));
         exit(EXIT_FAILURE);
     }
 }
@@ -92,7 +89,7 @@ std::map<int, int> *DatabaseReader::get_key_to_neuron_id_mapping(char* label) {
     prepare(compiled_statment, sql);
     bind(compiled_statment, 1, label);
 
-    std::map<int, int> *key_to_neuron_id_map = new std::map<int, int>();
+    auto key_to_neuron_id_map = new std::map<int, int>();
     while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
 	int neuron_id = sqlite3_column_int(compiled_statment, 0);
 	int key = sqlite3_column_int(compiled_statment, 1);
@@ -112,7 +109,7 @@ std::map<int, int> *DatabaseReader::get_neuron_id_to_key_mapping(char* label) {
     prepare(compiled_statment, sql);
     bind(compiled_statment, 1, label);
 
-    std::map<int, int> *neuron_id_to_key_map = new std::map<int, int>();
+    auto neuron_id_to_key_map = new std::map<int, int>();
     while (sqlite3_step(compiled_statment) == SQLITE_ROW) {
 	int neuron_id = sqlite3_column_int(compiled_statment, 0);
 	int key = sqlite3_column_int(compiled_statment, 1);
@@ -197,6 +194,7 @@ float DatabaseReader::get_configuration_parameter_value(char *parameter_name) {
     return sqlite3_column_double(compiled_statment, 0);
 }
 
-void DatabaseReader::close_database_connection(){
-    sqlite3_close(this->db);
+void DatabaseReader::close_database_connection() {
+    sqlite3_close(db);
+    db = nullptr;
 }

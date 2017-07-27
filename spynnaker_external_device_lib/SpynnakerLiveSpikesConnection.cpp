@@ -28,36 +28,38 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         char *local_host, int local_port, bool wait_for_start)
         : SpynnakerDatabaseConnection(this, this, local_host, local_port),
           StartCallbackInterface(), PauseStopCallbackInterface() {
-    this->add_database_callback(this);
+    add_database_callback(this);
     for (int i = 0; i < n_receive_labels; i++) {
         std::string receive_label(receive_labels[i]);
         this->receive_labels.push_back(receive_labels[i]);
-        this->live_spike_callbacks[receive_label] =
+
+        live_spike_callbacks[receive_label] =
             std::vector<SpikeReceiveCallbackInterface *>();
-        this->start_callbacks[receive_label] =
+        start_callbacks[receive_label] =
             std::vector<SpikesStartCallbackInterface *>();
-        this->waiting_for_start[receive_label] = wait_for_start;
-        this->pause_stop_callbacks[receive_label] =
+        waiting_for_start[receive_label] = wait_for_start;
+        pause_stop_callbacks[receive_label] =
             std::vector<SpikesPauseStopCallbackInterface *>();
     }
     for (int i = 0; i < n_send_labels; i++) {
         std::string send_label(send_labels[i]);
         this->send_labels.push_back(send_labels[i]);
-        this->start_callbacks[send_label] =
+
+        start_callbacks[send_label] =
             std::vector<SpikesStartCallbackInterface *>();
-        this->pause_stop_callbacks[send_label] =
+        pause_stop_callbacks[send_label] =
             std::vector<SpikesPauseStopCallbackInterface *>();
-        this->waiting_for_start[send_label] = wait_for_start;
+        waiting_for_start[send_label] = wait_for_start;
     }
-    this->n_waiting_for_start = 0;
+    n_waiting_for_start = 0;
     if (wait_for_start) {
-        this->n_waiting_for_start = n_send_labels + n_receive_labels;
+        n_waiting_for_start = n_send_labels + n_receive_labels;
     }
-    if (pthread_mutex_init(&this->start_mutex, NULL) == -1) {
+    if (pthread_mutex_init(&start_mutex, NULL) == -1) {
         fprintf(stderr, "Error initializing live start mutex\n");
         exit(-1);
     }
-    if (pthread_cond_init(&this->start_condition, NULL) == -1) {
+    if (pthread_cond_init(&start_condition, NULL) == -1) {
         fprintf(stderr, "Error initializing live start condition\n");
         exit(-1);
     }
@@ -65,37 +67,33 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
 
 void SpynnakerLiveSpikesConnection::add_initialize_callback(
         char *label, SpikeInitializeCallbackInterface *init_callback) {
-    this->init_callbacks[std::string(label)].push_back(init_callback);
+    init_callbacks[std::string(label)].push_back(init_callback);
 }
 
 void SpynnakerLiveSpikesConnection::add_receive_callback(
         char *label, SpikeReceiveCallbackInterface *receive_callback) {
-    this->live_spike_callbacks[std::string(label)].push_back(
-        receive_callback);
+    live_spike_callbacks[std::string(label)].push_back(receive_callback);
 }
 
 void SpynnakerLiveSpikesConnection::add_start_callback(
         char *label, SpikesStartCallbackInterface *start_callback) {
-    this->start_callbacks[std::string(label)].push_back(
-        start_callback);
+    start_callbacks[std::string(label)].push_back(start_callback);
 }
 
 void SpynnakerLiveSpikesConnection::add_pause_stop_callback(
         char *label, SpikesPauseStopCallbackInterface *pause_stop_callback) {
-    this->pause_stop_callbacks[std::string(label)].push_back(
-        pause_stop_callback);
+    pause_stop_callbacks[std::string(label)].push_back(pause_stop_callback);
 }
 
 void SpynnakerLiveSpikesConnection::add_wait_for_start(char *label) {
-    lock(this->start_mutex);
-    this->waiting_for_start[std::string(label)] = true;
-    this->n_waiting_for_start += 1;
-    unlock(this->start_mutex);
+    lock(start_mutex);
+    waiting_for_start[std::string(label)] = true;
+    n_waiting_for_start += 1;
+    unlock(start_mutex);
 }
 
 void SpynnakerLiveSpikesConnection::read_database_callback(
         DatabaseReader *reader) {
-
     float run_time_ms = reader->get_configuration_parameter_value(
         (char *) "runtime");
     float machine_time_step_ms = reader->get_configuration_parameter_value(
@@ -104,52 +102,46 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
     std::map<std::string, int> population_sizes;
 
     // get input data
-    for (int i = 0; i < this->send_labels.size(); i++) {
-        char *send_label = this->send_labels[i];
+    for (int i = 0; i < send_labels.size(); i++) {
+        char *send_label = send_labels[i];
         std::string send_label_str(send_label);
 
-        reverse_ip_tag_info *receive_info =
-            reader->get_live_input_details(send_label);
-        this->send_address_details[send_label_str] = get_address(
+        auto receive_info = reader->get_live_input_details(send_label);
+        send_address_details[send_label_str] = get_address(
             receive_info->board_address, receive_info->port);
         free(receive_info);
-        this->neuron_id_to_key_maps[send_label_str] =
+
+        neuron_id_to_key_maps[send_label_str] =
             reader->get_neuron_id_to_key_mapping(send_label);
         population_sizes[send_label_str] =
-            this->neuron_id_to_key_maps[send_label_str]->size();
+            neuron_id_to_key_maps[send_label_str]->size();
     }
 
     // get output data
     std::set<int> ports_in_use;
-    for (int i = 0; i < this->receive_labels.size(); i++) {
-        char *receive_label = this->receive_labels[i];
+    for (int i = 0; i < receive_labels.size(); i++) {
+        char *receive_label = receive_labels[i];
         std::string receive_label_str(receive_label);
 
-        ip_tag_info *send_info = reader->get_live_output_details(receive_label);
-
-        if (send_info->strip_sdp) {
-            std::set<int>::iterator value = ports_in_use.find(send_info->port);
-            if (value == ports_in_use.end()) {
-                UDPConnection *connection = new UDPConnection(send_info->port);
-                ConnectionListener *listener =
-                    new ConnectionListener(connection);
-                listener->add_receive_packet_callback(this);
-                listener->start();
-                ports_in_use.insert(send_info->port);
-            }
-        } else {
+        auto send_info = reader->get_live_output_details(receive_label);
+        if (!send_info->strip_sdp) {
             throw "Only tags which strip the SDP are supported";
         }
+	auto value = ports_in_use.find(send_info->port);
+	if (value == ports_in_use.end()) {
+	    UDPConnection *connection = new UDPConnection(send_info->port);
+	    auto listener = new ConnectionListener(connection);
+	    listener->add_receive_packet_callback(this);
+	    listener->start();
+	    ports_in_use.insert(send_info->port);
+	}
         free(send_info);
 
         // get key to neuron mapping for receiver translation
-        std::map<int, int> *key_map = reader->get_key_to_neuron_id_mapping(
-            receive_label);
-        for (auto iter = key_map->begin();
-                iter != key_map->end(); iter++) {
-            struct label_and_neuron_id* item =
-                new label_and_neuron_id(receive_label, iter->second);
-            this->key_to_neuron_id_and_label_map[iter->first] = item;
+        auto key_map = reader->get_key_to_neuron_id_mapping(receive_label);
+        for (auto iter = key_map->begin(); iter != key_map->end(); iter++) {
+            auto item = new label_and_neuron_id(receive_label, iter->second);
+            key_to_neuron_id_and_label_map[iter->first] = item;
         }
 
         population_sizes[receive_label_str] = key_map->size();
@@ -159,8 +151,7 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
 	    iter != population_sizes.end(); iter++) {
         std::string pop_label = iter->first;
         int n_neurons = iter->second;
-        std::vector<SpikeInitializeCallbackInterface *> init_callbacks =
-            this->init_callbacks[pop_label];
+        auto init_callbacks = this->init_callbacks[pop_label];
         for (int i = 0; i < init_callbacks.size(); i++) {
             init_callbacks[i]->init_population(
                 (char *) pop_label.c_str(), n_neurons, run_time_ms,
@@ -168,11 +159,11 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
         }
     }
 
-    lock(this->start_mutex);
-    while (this->n_waiting_for_start > 0) {
-        wait(this->start_condition, this->start_mutex);
+    lock(start_mutex);
+    while (n_waiting_for_start > 0) {
+        wait(start_condition, start_mutex);
     }
-    unlock(this->start_mutex);
+    unlock(start_mutex);
 }
 
 struct start_callback_info {
@@ -205,14 +196,14 @@ struct pause_stop_callback_info {
 
 
 void SpynnakerLiveSpikesConnection::start_callback() {
-    for (auto iter = this->start_callbacks.begin();
-            iter != this->start_callbacks.end(); iter++) {
+    for (auto iter = start_callbacks.begin();
+            iter != start_callbacks.end(); iter++) {
         for (int i = 0; i < iter->second.size(); i++) {
             pthread_t callback_thread;
             char *label = (char *) iter->first.c_str();
             SpikesStartCallbackInterface *callback = iter->second[i];
-            struct start_callback_info *start_info =
-                new struct start_callback_info(callback, label, this);
+            auto start_info = new start_callback_info(
+        	    callback, label, this);
             pthread_create(
                 &callback_thread, NULL, _call_start_callback,
                 (void *) start_info);
@@ -222,23 +213,21 @@ void SpynnakerLiveSpikesConnection::start_callback() {
 
 
 void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
-    struct start_callback_info *start_callback_info =
-        (struct start_callback_info *) start_info;
-    start_callback_info->start_callback->spikes_start(
-        start_callback_info->label, start_callback_info->connection);
+    auto info = (start_callback_info *) start_info;
+    info->start_callback->spikes_start(info->label, info->connection);
     return NULL;
 }
 
 
 void SpynnakerLiveSpikesConnection::pause_stop_callback() {
-    for (auto iter = this->pause_stop_callbacks.begin();
-	    iter != this->pause_stop_callbacks.end(); iter++) {
+    for (auto iter = pause_stop_callbacks.begin();
+	    iter != pause_stop_callbacks.end(); iter++) {
         for (int i = 0; i < iter->second.size(); i++) {
             pthread_t callback_thread;
             char *label = (char *) iter->first.c_str();
-            SpikesPauseStopCallbackInterface *callback = iter->second[i];
-            struct pause_stop_callback_info *pause_stop_info =
-                new struct pause_stop_callback_info(callback, label, this);
+            auto callback = iter->second[i];
+            auto pause_stop_info = new struct pause_stop_callback_info(
+        	    callback, label, this);
             pthread_create(
                 &callback_thread, NULL, _call_pause_stop_callback,
                 (void *) pause_stop_info);
@@ -249,10 +238,8 @@ void SpynnakerLiveSpikesConnection::pause_stop_callback() {
 
 void *SpynnakerLiveSpikesConnection::_call_pause_stop_callback(
         void *pause_stop_info) {
-    struct pause_stop_callback_info *pause_stop_callback_info =
-        (struct pause_stop_callback_info *) pause_stop_info;
-    pause_stop_callback_info->pause_stop_callback->spikes_stop(
-        pause_stop_callback_info->label, pause_stop_callback_info->connection);
+    auto info = (pause_stop_callback_info *) pause_stop_info;
+    info->pause_stop_callback->spikes_stop(info->label, info->connection);
     return NULL;
 }
 
@@ -267,15 +254,12 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
         EIEIOElement* element = message->get_next_element();
         int time = element->get_payload();
         int key = element->get_key();
-        std::map<int, struct label_and_neuron_id *>::iterator value =
-            this->key_to_neuron_id_and_label_map.find(key);
-        if (value != this->key_to_neuron_id_and_label_map.end()) {
-            struct label_and_neuron_id *item = value->second;
+        auto value = key_to_neuron_id_and_label_map.find(key);
+        if (value != key_to_neuron_id_and_label_map.end()) {
+            auto item = value->second;
             std::pair<int, std::string> time_label(
                 time, std::string(item->label));
-            std::map<std::pair<int, std::string>,
-                     std::vector<int> *>::iterator key_times_labels_item =
-                         key_times_labels.find(time_label);
+            auto key_times_labels_item = key_times_labels.find(time_label);
             std::vector<int> *ids = NULL;
             if (key_times_labels_item != key_times_labels.end()) {
                 ids = key_times_labels_item->second;
@@ -290,10 +274,9 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
             iter != key_times_labels.end(); iter++) {
         int time = iter->first.first;
         std::string label = iter->first.second;
-        std::vector<SpikeReceiveCallbackInterface *> callbacks =
-            this->live_spike_callbacks[label];
+        auto callbacks = live_spike_callbacks[label];
         for (int i = 0; i < callbacks.size(); i++) {
-            std::vector<int> *spikes = iter->second;
+            auto spikes = iter->second;
             callbacks[i]->receive_spikes(
                 (char *) label.c_str(), time, spikes->size(), &((*spikes)[0]));
         }
@@ -315,15 +298,9 @@ void SpynnakerLiveSpikesConnection::send_spikes(
 
         EIEIOHeader * header;
         if (send_full_keys) {
-            EIEIOType type = KEY_32_BIT;
-            EIEIOHeader* eieio_header =
-                new EIEIOHeader(0, 0, 0, 0, type, 0, 0, 0);
-            header = eieio_header;
+            header = new EIEIOHeader(0, 0, 0, 0, KEY_32_BIT, 0, 0, 0);
         } else {
-            EIEIOType type = KEY_16_BIT;
-            EIEIOHeader* eieio_header =
-                new EIEIOHeader(0, 0, 0, 0, type, 0, 0, 0);
-            header = eieio_header;
+            header = new EIEIOHeader(0, 0, 0, 0, KEY_16_BIT, 0, 0, 0);
         }
         EIEIOMessage message = EIEIOMessage(header);
 
@@ -333,7 +310,7 @@ void SpynnakerLiveSpikesConnection::send_spikes(
         while (pos < neuron_ids.size() && spikes_in_packet < max_keys) {
             int key;
             if (send_full_keys) {
-                std::map<int, int> *map = this->neuron_id_to_key_maps[label];
+                auto map = neuron_id_to_key_maps[label];
                 key = (*map)[neuron_ids[pos]];
             } else {
                 key = neuron_ids[pos];
@@ -347,8 +324,7 @@ void SpynnakerLiveSpikesConnection::send_spikes(
         //locate socket details for where to send this to
         unsigned char * data = (unsigned char *) malloc(message.get_max_size());
         int size = message.get_data(data);
-        this->send_data_to(data, size,
-        	this->send_address_details[std::string(label)]);
+        send_data_to(data, size, send_address_details[std::string(label)]);
         free(data);
     }
 }
@@ -365,23 +341,23 @@ void SpynnakerLiveSpikesConnection::send_spike(
 void SpynnakerLiveSpikesConnection::send_start(char *label) {
     if (label != NULL) {
         std::string label_str = std::string(label);
-        lock(this->start_mutex);
-        if (this->waiting_for_start[label_str]) {
-            this->waiting_for_start[label_str] = false;
-            this->n_waiting_for_start -= 1;
-            signal(this->start_condition);
+        lock(start_mutex);
+        if (waiting_for_start[label_str]) {
+            waiting_for_start[label_str] = false;
+            n_waiting_for_start -= 1;
+            signal(start_condition);
         }
-        unlock(this->start_mutex);
+        unlock(start_mutex);
     } else {
-        lock(this->start_mutex);
-        this->waiting_for_start.clear();
-        this->n_waiting_for_start = 0;
-        signal(this->start_condition);
-        unlock(this->start_mutex);
+        lock(start_mutex);
+        waiting_for_start.clear();
+        n_waiting_for_start = 0;
+        signal(start_condition);
+        unlock(start_mutex);
     }
 }
 
 SpynnakerLiveSpikesConnection::~SpynnakerLiveSpikesConnection(){
-    pthread_mutex_destroy(&this->start_mutex);
-    pthread_cond_destroy(&this->start_condition);
+    pthread_mutex_destroy(&start_mutex);
+    pthread_cond_destroy(&start_condition);
 }

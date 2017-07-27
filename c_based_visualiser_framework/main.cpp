@@ -13,11 +13,10 @@
 #include "raster_view/RasterPlot.h"
 
 char* get_next_arg(int position, char **argv, int argc){
-    if (position + 1 > argc){
+    if (position + 1 > argc) {
         throw "missing a element";
-    } else{
-        return argv[position + 1];
     }
+    return argv[position + 1];
 }
 
 int main(int argc, char **argv){
@@ -40,7 +39,6 @@ int main(int argc, char **argv){
     float ms_per_pixel = 0.0;
 
     for (int arg_index = 1; arg_index < argc; arg_index+=2){
-
         if (strcmp(argv[arg_index], "-hand_shake_port") == 0){
             hand_shake_listen_port_no = atoi(get_next_arg(
                 arg_index, argv, argc));

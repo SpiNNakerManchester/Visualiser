@@ -7,58 +7,58 @@ SpynnakerDatabaseConnection::SpynnakerDatabaseConnection(
         PauseStopCallbackInterface *pause_stop_callback,
         char *local_host, int local_port)
         :UDPConnection(local_port, local_host) {
-    this->database_path_received = false;
+    database_path_received = false;
     this->start_callback = start_callback;
     this->pause_stop_callback = pause_stop_callback;
-    this->running = false;
-    this->start();
+    running = false;
+    start();
 }
 
 void SpynnakerDatabaseConnection::add_database_callback(
         DatabaseCallbackInterface *callback){
-    this->database_callbacks.push_back(callback);
+    database_callbacks.push_back(callback);
 }
 
 void SpynnakerDatabaseConnection::run() {
 
-    this->running = true;
-    while (this->running) {
+    running = true;
+    while (running) {
     
         // Wait for notification that the database has been written
         unsigned char data[MAX_PACKET_SIZE];
         struct sockaddr_in address;
-        int n_bytes = this->receive_data_with_address(
+        int n_bytes = receive_data_with_address(
             data, MAX_PACKET_SIZE - 1, &address);
         if (!database_path_received) {
             data[n_bytes] = '\0';
             char *database_path = (char *) &data[2];
 
-            this->set_database(database_path);
+            set_database(database_path);
 
             // Send the notification back that the database has been read
             unsigned char eieio_response[2];
             eieio_response[1] = (1 << 6);
             eieio_response[0] = 1;
-            this->send_data_to(eieio_response, 2, &address);
+            send_data_to(eieio_response, 2, &address);
             database_path_received = true;
         }
 
         // Wait for the start notification
         unsigned char unused_data[MAX_PACKET_SIZE];
-        this->receive_data(unused_data, MAX_PACKET_SIZE);
-        if (this->start_callback != NULL) {
+        receive_data(unused_data, MAX_PACKET_SIZE);
+        if (start_callback != nullptr) {
             
             // Call the start callback
-            this->start_callback->start_callback();
+            start_callback->start_callback();
         }
 
         // Wait for the stop / pause notification
         unsigned char unused_data2[MAX_PACKET_SIZE];
-        this->receive_data(unused_data2, MAX_PACKET_SIZE);
-        if (this->pause_stop_callback != NULL){
+        receive_data(unused_data2, MAX_PACKET_SIZE);
+        if (pause_stop_callback != nullptr){
             
             // Call the pause stop callback
-            this->pause_stop_callback->pause_stop_callback();
+            pause_stop_callback->pause_stop_callback();
         }
     }
 }
@@ -68,12 +68,12 @@ void SpynnakerDatabaseConnection::set_database(char *database_path) {
 
     // Call the callback function with the reader
     DatabaseReader reader(database_path);
-    for (int i = 0; i < this->database_callbacks.size(); i++) {
-        this->database_callbacks[i]->read_database_callback(&reader);
+    for (int i = 0; i < database_callbacks.size(); i++) {
+        database_callbacks[i]->read_database_callback(&reader);
     }
     reader.close_database_connection();
 }
 
 SpynnakerDatabaseConnection::~SpynnakerDatabaseConnection() {
-    this->running = false;
+    running = false;
 }

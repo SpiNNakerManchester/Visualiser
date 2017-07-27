@@ -29,6 +29,13 @@ ColourReader::ColourReader(char *path) {
     fclose(colour_fp);
 }
 
+ColourReader::~ColourReader() {
+    for (auto it = labels->begin(); it != labels->end() ; it++) {
+	free(*it);
+    }
+    delete labels;
+}
+
 std::vector<char *> *ColourReader::get_labels() {
     return this->labels;
 }

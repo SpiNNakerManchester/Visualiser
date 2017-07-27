@@ -8,29 +8,29 @@
 
 // build a basic EIEIO element
 EIEIOElement::EIEIOElement(int key) {
-    this->_key = key;
-    this->_payload = 0;
-    this->_has_payload = false;
+    _key = key;
+    _payload = 0;
+    _has_payload = false;
 }
 
 // build a EIEIO element with payload
 EIEIOElement::EIEIOElement(int key, int payload) {
-    this->_key = key;
-    this->_payload = payload;
-    this->_has_payload = true;
+    _key = key;
+    _payload = payload;
+    _has_payload = true;
 }
 
 // getters
 int EIEIOElement::get_key() {
-    return this->_key;
+    return _key;
 }
 
 int EIEIOElement::get_payload() {
-    return this->_payload;
+    return _payload;
 }
 
 bool EIEIOElement::has_payload() {
-    return this->_has_payload;
+    return _has_payload;
 }
 
 static inline unsigned char byte(int word, int shift=0) {
@@ -40,28 +40,28 @@ static inline unsigned char byte(int word, int shift=0) {
 //! \brief converts EIEIO element into bytes for transmission via sockets
 int EIEIOElement::convert_to_bytes(unsigned char* data, int offset, int format) {
     if (format == KEY_16_BIT || format == KEY_PAYLOAD_16_BIT) {
-        data[offset] =     byte(this->_key);
-        data[offset + 1] = byte(this->_key, 8);
+        data[offset] =     byte(_key);
+        data[offset + 1] = byte(_key, 8);
         offset += 2;
     } else if (format == KEY_32_BIT || format == KEY_PAYLOAD_32_BIT) {
-        data[offset] =     byte(this->_key);
-        data[offset + 1] = byte(this->_key, 8);
-        data[offset + 2] = byte(this->_key, 16);
-        data[offset + 3] = byte(this->_key, 24);
+        data[offset] =     byte(_key);
+        data[offset + 1] = byte(_key, 8);
+        data[offset + 2] = byte(_key, 16);
+        data[offset + 3] = byte(_key, 24);
         offset += 4;
     } else {
         throw "Invalid format type, please fix and try again";
     }
-    if (this->_has_payload) {
+    if (_has_payload) {
         if (format == KEY_PAYLOAD_16_BIT){
-            data[offset] =     byte(this->_payload);
-            data[offset + 1] = byte(this->_payload, 8);
+            data[offset] =     byte(_payload);
+            data[offset + 1] = byte(_payload, 8);
             offset += 2;
         } else if (format == KEY_PAYLOAD_32_BIT) {
-            data[offset] =     byte(this->_payload);
-            data[offset + 1] = byte(this->_payload, 8);
-            data[offset + 2] = byte(this->_payload, 16);
-            data[offset + 3] = byte(this->_payload, 24);
+            data[offset] =     byte(_payload);
+            data[offset + 1] = byte(_payload, 8);
+            data[offset + 2] = byte(_payload, 16);
+            data[offset + 3] = byte(_payload, 24);
             offset += 4;
         } else {
             throw "Invalid format type, please fix and try again";
@@ -128,26 +128,27 @@ EIEIOHeader* EIEIOHeader::create_from_byte_array(
     int prefix = -1;
     int payload_prefix = -1;
     if (payload_prefix_flag == 1) {
-        if (eieio_type == KEY_16_BIT or
-                eieio_type == KEY_PAYLOAD_16_BIT) {
+	switch (eieio_type) {
+	case KEY_16_BIT:
+	case KEY_PAYLOAD_16_BIT:
             if (prefix_flag == 1) {
                 prefix = (data[offset + 2] >> 8) & 0xFFFF;
                 payload_prefix = data[offset + 2] & 0xFFFF;
             } else {
                 payload_prefix = data[offset + 2];
             }
-        } else if (eieio_type == KEY_32_BIT or
-        	eieio_type == KEY_PAYLOAD_32_BIT) {
-            if (prefix_flag == 1){
+            break;
+	case KEY_32_BIT:
+	case KEY_PAYLOAD_32_BIT:
+            if (prefix_flag == 1) {
                 prefix = (data[offset + 2] >> 8) & 0xFFFF;
-                payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
-            } else {
-            	payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
             }
+            payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
+            break;
         }
     } else {
         if (prefix_flag == 1) {
-            prefix =  prefix = (data[offset + 2] >> 8) & 0xFFFF;
+            prefix = (data[offset + 2] >> 8) & 0xFFFF;
         }
     }
 
@@ -163,7 +164,7 @@ int EIEIOHeader::read_element(
 {
     int final_data = 0;
     for (int position = 0; position < number_bytes_to_read; position++) {
-        final_data += (data[(offset + position)] << (position * 8));
+        final_data += data[offset + position] << (position * 8);
     }
     return final_data;
 }
@@ -198,19 +199,18 @@ int EIEIOHeader::get_count(){
 }
 
 void EIEIOHeader::increment_count(){
-    this->_count ++;
+    this->_count++;
 }
 
 int EIEIOHeader::get_timestamp() {
-    if (this->_t != 1) {
+    if (_t != 1) {
         throw "This message does not contain a time stamp";
     }
     return this->_payload_prefix;
 }
 
 int EIEIOHeader::get_key_bytes() {
-    if (this->_type == KEY_16_BIT ||
-            this->_type == KEY_PAYLOAD_16_BIT){
+    if (_type == KEY_16_BIT || _type == KEY_PAYLOAD_16_BIT){
         return 2;
     } else {
         return 4;
@@ -229,14 +229,14 @@ int EIEIOHeader::get_payload_bytes() {
 
 //! \brief converts a eieio header into bytes for sending via sockets
 int EIEIOHeader::convert_to_bytes(unsigned char * data, int offset) {
-    data[offset] = (unsigned char) this->_count;
+    data[offset] = (unsigned char) _count;
     int header_part = 0;
-    header_part += (this->_p << 7);
-    header_part += (this->_f << 6);
-    header_part += (this->_d << 5);
-    header_part += (this->_t << 4);
-    header_part += (this->_type << 2);
-    header_part += this->_tag;
+    header_part += _p << 7;
+    header_part += _f << 6;
+    header_part += _d << 5;
+    header_part += _t << 4;
+    header_part += _type << 2;
+    header_part += _tag;
     data[offset + 1] = (unsigned char) header_part;
     return offset + 2;
 }
@@ -244,11 +244,11 @@ int EIEIOHeader::convert_to_bytes(unsigned char * data, int offset) {
 // gets the size in bytes for the eieio header
 int EIEIOHeader::get_size() {
     int size = 2;
-    if (this->_p == 1) {
+    if (_p == 1) {
         size += 2;
     }
-    if (this->_d == 1) {
-        if (this->_type == KEY_PAYLOAD_16_BIT) {
+    if (_d == 1) {
+        if (_type == KEY_PAYLOAD_16_BIT) {
             size += 2;
         } else { // works for 32 bit payloads and timestamps.
             size += 4;
@@ -296,7 +296,7 @@ void EIEIOMessage::read_in_16_key_payload_message(
 {
     int key = read_element(offset, data, 2);
     int payload = read_element(offset + 2, data, 2);
-    this->add_key_and_payload(key, payload);
+    add_key_and_payload(key, payload);
 }
 
 //! \brief reads in a EIEIO element from the data with 16 bit key.
@@ -304,10 +304,10 @@ void EIEIOMessage::read_in_16_key_message(
         int offset, unsigned char * data)
 {
     int key = read_element(offset, data, 2);
-    if (this->_header->get_t() == 1) {
-        this->add_key_and_payload(key, this->_header->get_timestamp());
+    if (_header->get_t() == 1) {
+        add_key_and_payload(key, _header->get_timestamp());
     } else {
-        this->add_key(key);
+        add_key(key);
     }
 }
 
@@ -316,10 +316,10 @@ void EIEIOMessage::read_in_32_key_message(
         int offset, unsigned char * data)
 {
     int key = read_element(offset, data, 4);
-    if (this->_header->get_t() == 1) {
-        this->add_key_and_payload(key, this->_header->get_timestamp());
+    if (_header->get_t() == 1) {
+        add_key_and_payload(key, _header->get_timestamp());
     } else {
-        this->add_key(key);
+        add_key(key);
     }
 }
 
@@ -339,7 +339,7 @@ int EIEIOMessage::read_element(
 {
     int final_data = 0;
     for (int position = 0; position < number_bytes_to_read; position++) {
-        final_data |= (data[(offset + position)] << (position * 8));
+        final_data |= data[offset + position] << (position * 8);
     }
     return final_data;
 }
@@ -351,46 +351,45 @@ EIEIOMessage::EIEIOMessage(EIEIOHeader* header) {
 
 //! \brief converts header t into a boolean for easy use from message
 bool EIEIOMessage::has_timestamps() {
-    return (this->_header->get_t() == 1);
+    return _header->get_t() == 1;
 }
 
 //! \brief adds one to the header
 void EIEIOMessage::increment_count() {
-    this->_header->increment_count();
+    _header->increment_count();
 }
 
-//! \brief helper for seeing if theres still elements in the list to read
+//! \brief helper for seeing if there's still elements in the list to read
 bool EIEIOMessage::is_next_element(){
     return (this->_position_read != this->_header->get_count());
 }
 
 //! \brief gets the next element in the data
 EIEIOElement* EIEIOMessage::get_next_element() {
-    if (!this->is_next_element()) {
+    if (!is_next_element()) {
         throw std::invalid_argument("No more elements");
     }
-    _position_read++;
-    return this->_data[this->_position_read - 1];
+    int pos = _position_read++;
+    return _data[pos];
 }
 
 //! \brief adds a key to the data object
 void EIEIOMessage::add_key(int key){
     EIEIOElement* element = new EIEIOElement(key);
-    this->_data.push_back(element);
+    _data.push_back(element);
 }
 
 //! \brief adds a key and payload to the data object
 void EIEIOMessage::add_key_and_payload(int key, int payload){
     EIEIOElement* element = new EIEIOElement(key, payload);
-    this->_data.push_back(element);
+    _data.push_back(element);
 }
 
 //! \brief gets the size of the eieio message in bytes
 int EIEIOMessage::get_size(){
-    int size = this->_header->get_size();
-    size += (this->_header->get_key_bytes() +
-              this->_header->get_payload_bytes())
-             * this->_header->get_count();
+    int size = _header->get_size();
+    size += (_header->get_key_bytes() + _header->get_payload_bytes())
+             * _header->get_count();
     return size;
 }
 
@@ -402,13 +401,13 @@ int EIEIOMessage::get_max_size(){
     return size;
 }
 
-//! \brief returns the ehasder and data as a char * for sending via sockets
+//! \brief returns the header and data as a char * for sending via sockets
 int EIEIOMessage::get_data(unsigned char * data){
     int offset = 0;
-    offset = this->_header->convert_to_bytes(data, offset);
-    for(int position = 0; position < this->_data.size(); position++) {
-        offset = this->_data[position]->convert_to_bytes(
-        	data, offset, this->_header->get_type());
+    offset = _header->convert_to_bytes(data, offset);
+    for(int position = 0; position < _data.size(); position++) {
+        offset = _data[position]->convert_to_bytes(
+        	data, offset, _header->get_type());
     }
     return offset;
 }

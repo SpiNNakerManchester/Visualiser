@@ -37,7 +37,7 @@ private:
 
     Reader *reader;
     UDPConnection* _connection;
-    bool _done;
+    volatile bool _done;
     pthread_mutex_t free_data_mutex;
     pthread_mutex_t data_to_process_mutex;
     pthread_cond_t free_data_condition;

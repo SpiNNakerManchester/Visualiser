@@ -10,6 +10,7 @@ class ColourReader {
 
     public:
         ColourReader(char *path);
+        virtual ~ColourReader();
         std::vector<char *> *get_labels();
         colour get_colour(char *label);
 

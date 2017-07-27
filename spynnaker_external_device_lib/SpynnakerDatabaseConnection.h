@@ -43,7 +43,7 @@ private:
     StartCallbackInterface *start_callback;
     PauseStopCallbackInterface *pause_stop_callback;
     bool database_path_received;
-    bool running;
+    volatile bool running;
 };
 
 #endif /* _SPYNNAKER_DATABASE_CONNECTION_H_ */
