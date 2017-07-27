@@ -32,16 +32,16 @@ SudokuPlot::SudokuPlot(
     this->argc = argc;
     this->argv = argv;
 
-    if (pthread_mutex_init(&this->start_mutex, NULL) == -1) {
+    if (pthread_mutex_init(&start_mutex, NULL) == -1) {
         fprintf(stderr, "Error initializing start mutex!\n");
         exit(-1);
     }
-    if (pthread_cond_init(&this->start_condition, NULL) == -1) {
+    if (pthread_cond_init(&start_condition, NULL) == -1) {
         fprintf(stderr, "Error initializing start condition!\n");
         exit(-1);
     }
 
-    if (pthread_mutex_init(&this->point_mutex, NULL) == -1) {
+    if (pthread_mutex_init(&point_mutex, NULL) == -1) {
         fprintf(stderr, "Error initializing point mutex!\n");
         exit(-1);
     }
@@ -65,7 +65,7 @@ void SudokuPlot::init_population(
     this->plot_time_ms = run_time_ms;
     this->timestep_ms = machine_time_step_ms;
 
-    char *cell_label = (char *) malloc(sizeof(char) * strlen(label));
+    char *cell_label = malloc(sizeof(char) * strlen(label));
     strcpy(cell_label, label);
     this->cell_labels[this->cell_id] = cell_label;
     this->cell_size_map[this->cell_id] = n_neurons;
@@ -73,39 +73,41 @@ void SudokuPlot::init_population(
     this->n_neurons += n_neurons;
     this->cell_id += 1;
 
-    pthread_mutex_lock(&this->start_mutex);
-    this->n_populations_to_read -= 1;
-    if (this->n_populations_to_read <= 0) {
-        this->database_read = true;
-        while (!this->user_pressed_start) {
-            pthread_cond_wait(&this->start_condition, &this->start_mutex);
+    pthread_mutex_lock(&start_mutex);
+    n_populations_to_read -= 1;
+    if (n_populations_to_read <= 0) {
+        database_read = true;
+        while (!user_pressed_start) {
+            pthread_cond_wait(&start_condition, &start_mutex);
         }
     }
-    pthread_mutex_unlock(&this->start_mutex);
+    pthread_mutex_unlock(&start_mutex);
 }
 
 void SudokuPlot::spikes_start(
         char *label, SpynnakerLiveSpikesConnection *connection) {
-    pthread_mutex_lock(&this->start_mutex);
-    this->simulation_started = true;
-    pthread_mutex_unlock(&this->start_mutex);
+    pthread_mutex_lock(&start_mutex);
+    simulation_started = true;
+    pthread_mutex_unlock(&start_mutex);
 }
 
 void SudokuPlot::receive_spikes(
         char *label, int time, int n_spikes, int *spikes) {
-    pthread_mutex_lock(&this->point_mutex);
+    pthread_mutex_lock(&point_mutex);
+
     std::string label_str = std::string(label);
     for (int i = 0; i < n_spikes; i++) {
-        int cell_id = spikes[i] / (this->neurons_per_number * 9);
-        int neuron_id = spikes[i] % (this->neurons_per_number * 9);
+        int cell_id = spikes[i] / (neurons_per_number * 9);
+        int neuron_id = spikes[i] % (neurons_per_number * 9);
         std::pair<int, int> point(time, neuron_id);
-        this->points_to_draw[cell_id].push_back(point);
+        points_to_draw[cell_id].push_back(point);
     }
-    float time_ms = time * this->timestep_ms;
-    if (time_ms > this->latest_time) {
-        this->latest_time = time_ms;
+    float time_ms = time * timestep_ms;
+    if (time_ms > latest_time) {
+        latest_time = time_ms;
     }
-    pthread_mutex_unlock(&this->point_mutex);
+
+    pthread_mutex_unlock(&point_mutex);
 }
 
 //-------------------------------------------------------------------------
@@ -172,7 +174,7 @@ static void line(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2) {
 }
 
 void SudokuPlot::display(float time) {
-    if (glutGetWindow() == this->window) {
+    if (glutGetWindow() == window) {
 
         glPointSize(1.0);
 
@@ -183,26 +185,25 @@ void SudokuPlot::display(float time) {
         float cell_width = (window_width - (2 * WINDOW_BORDER)) / 9.0;
         float cell_height = (window_height - (2 * WINDOW_BORDER)) / 9.0;
 
-        float end = this->latest_time;
-        float start = end - this->ms_per_bin;
+        float end = latest_time;
+        float start = end - ms_per_bin;
         if (start < 0.0) {
             start = 0.0;
-            end = start + this->ms_per_bin;
+            end = start + ms_per_bin;
         }
 
-        float x_spacing = (float) cell_width /
-            ((end - start) / this->timestep_ms);
+        float x_spacing = (float) cell_width / ((end - start) / timestep_ms);
 
-        pthread_mutex_lock(&this->start_mutex);
-        if (!this->database_read) {
+        pthread_mutex_lock(&start_mutex);
+        if (!database_read) {
             char prompt[] = "Waiting for database to be ready...";
             printgl((window_width / 2) - 120, window_height - 50,
                     GLUT_BITMAP_TIMES_ROMAN_24, prompt);
-        } else if (!this->user_pressed_start) {
+        } else if (!user_pressed_start) {
             char prompt[] = "Press space bar to start...";
             printgl((window_width / 2) - 100, window_height - 50,
                     GLUT_BITMAP_TIMES_ROMAN_24, prompt);
-        } else if (!this->simulation_started) {
+        } else if (!simulation_started) {
             char prompt[] = "Waiting for simulation to start...";
             printgl((window_width / 2) - 120, window_height - 50,
                     GLUT_BITMAP_TIMES_ROMAN_24, prompt);
@@ -211,7 +212,7 @@ void SudokuPlot::display(float time) {
             printgl((window_width / 2) - 75, window_height - 50,
                     GLUT_BITMAP_TIMES_ROMAN_24, title);
         }
-        pthread_mutex_unlock(&this->start_mutex);
+        pthread_mutex_unlock(&start_mutex);
 
         // Draw the cells
         glColor4f(0.0, 0.0, 0.0, 1.0);
@@ -235,10 +236,10 @@ void SudokuPlot::display(float time) {
             line(x_pos, window_height - WINDOW_BORDER, x_pos, WINDOW_BORDER);
         }
 
-        int start_tick = start / this->timestep_ms;
-        int end_tick = end / this->timestep_ms;
+        int start_tick = start / timestep_ms;
+        int end_tick = end / timestep_ms;
 
-        pthread_mutex_lock(&this->point_mutex);
+        pthread_mutex_lock(&point_mutex);
 
         // Work out the cell values
         int cell_value[81];
@@ -259,7 +260,7 @@ void SudokuPlot::display(float time) {
             int total = 0;
             for (auto iter = points_to_draw[cell].begin();
                     iter != points_to_draw[cell].end(); ++iter) {
-                int number = iter->second / this->neurons_per_number;
+                int number = iter->second / neurons_per_number;
                 if (number < 9) {
                     count[number] += 1;
                     total += 1;
@@ -318,7 +319,7 @@ void SudokuPlot::display(float time) {
             uint32_t x_start = WINDOW_BORDER + (cell_x * cell_width) + 1;
             uint32_t y_start = WINDOW_BORDER + (cell_y * cell_height) + 1;
             float y_spacing = (float) cell_height
-                    / (float) (this->neurons_per_number * 9);
+                    / (float) (neurons_per_number * 9);
 
             // Work out how probable the number is and use this for colouring
             float cell_sat = 1 - cell_prob[cell];
@@ -354,17 +355,17 @@ void SudokuPlot::display(float time) {
             }
         }
 
-        pthread_mutex_unlock(&this->point_mutex);
+        pthread_mutex_unlock(&point_mutex);
 
         glutSwapBuffers();
     }
 }
 
 void SudokuPlot::reshape(int width, int height) {
-    if (glutGetWindow() == this->window) {
+    if (glutGetWindow() == window) {
         fprintf(stderr, "Reshape to %d, %d\n", width, height);
-        this->window_width = width;
-        this->window_height = height;
+        window_width = width;
+        window_height = height;
 
         // viewport dimensions
         glViewport(0, 0, (GLsizei) width, (GLsizei) height);
@@ -384,13 +385,13 @@ void SudokuPlot::keyboardUp(unsigned char key, int x, int y) {
 
         // create and send the eieio command message confirming database
         // read
-        pthread_mutex_lock(&this->start_mutex);
-        if (!this->user_pressed_start) {
+        pthread_mutex_lock(&start_mutex);
+        if (!user_pressed_start) {
             printf("Starting the simulation\n");
-            this->user_pressed_start = true;
-            pthread_cond_signal(&this->start_condition);
+            user_pressed_start = true;
+            pthread_cond_signal(&start_condition);
         }
-        pthread_mutex_unlock(&this->start_mutex);
+        pthread_mutex_unlock(&start_mutex);
     }
 }
 
