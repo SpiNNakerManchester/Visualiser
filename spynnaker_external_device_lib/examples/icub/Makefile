@@ -1,4 +1,4 @@
-OBJECTS = icub.o
+OBJECTS = icub.o main.o
 
 APP = icub
 

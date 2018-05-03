@@ -1,43 +1,4 @@
-#include "../../SpynnakerLiveSpikesConnection.h"
-#include <chrono>
-#include <thread>
-
-class ICubInterface :
-        public SpikeReceiveCallbackInterface,
-        public SpikesStartCallbackInterface,
-        public SpikesPauseStopCallbackInterface,
-        public SpikeInitializeCallbackInterface,
-        private Threadable {
-public:
-    ICubInterface(char *send_labels, char *receive_labels);
-    void init_population(
-        char *label, int n_neurons, float run_time_ms,
-        float machine_time_step_ms);
-    void receive_spikes(char *label, int time, int n_spikes, int* spikes);
-    void spikes_start(char *label, SpynnakerLiveSpikesConnection *connection);
-    void spikes_stop(char *label, SpynnakerLiveSpikesConnection *connection);
-
-    int getRecvQueueSize();
-    std::pair<int, int> getNextSpike(bool wait=false);
-    void addSpikeToSendQueue(int neuron_id);
-    void enableSendQueue();
-    void end();
-
-protected:
-    void run();
-
-private:
-    pthread_mutex_t recv_mutex;
-    pthread_cond_t recv_cond;
-    std::deque< std::pair<int, int> > recv_queue;
-    pthread_mutex_t send_mutex;
-    pthread_cond_t send_cond;
-    std::deque< int > send_queue;
-    bool send_queue_enabled;
-    SpynnakerLiveSpikesConnection *send_connection;
-    char *send_label;
-    bool running;
-};
+#include "icub.h"
 
 ICubInterface::ICubInterface(
         char *send_label, char *receive_label) {
@@ -79,7 +40,7 @@ void ICubInterface::receive_spikes(
     for (int i = 0; i < n_spikes; i++) {
         recv_queue.push_back(std::pair<int, int>(time, spikes[i]));
     }
-    pthread_cond_signal(&this->recv_cond);
+    pthread_cond_broadcast(&this->recv_cond);
     pthread_mutex_unlock(&this->recv_mutex);
 }
 
@@ -88,22 +49,24 @@ void ICubInterface::spikes_start(
     pthread_mutex_lock(&this->send_mutex);
     this->send_label = (char *) malloc(sizeof(char) * strlen(label));
     strcpy(this->send_label, label);
-    pthread_cond_signal(&this->send_cond);
+    pthread_cond_broadcast(&this->send_cond);
     pthread_mutex_unlock(&this->send_mutex);
 }
 
 void ICubInterface::spikes_stop(
         char *label, SpynnakerLiveSpikesConnection *connection) {
+    pthread_mutex_lock(&this->send_mutex);
+    free(this->send_label);
     this->send_label = NULL;
-    fprintf(stderr, "Exiting\n");
-    exit(0);
+    pthread_cond_broadcast(&this->send_cond);
+    pthread_mutex_unlock(&this->send_mutex);
 }
 
 int ICubInterface::getRecvQueueSize() {
     int size = 0;
     pthread_mutex_lock(&this->recv_mutex);
     size = this->recv_queue.size();
-    pthread_cond_signal(&this->recv_cond);
+    pthread_cond_broadcast(&this->recv_cond);
     pthread_mutex_unlock(&this->recv_mutex);
     return size;
 }
@@ -126,14 +89,14 @@ std::pair<int, int> ICubInterface::getNextSpike(bool wait) {
 void ICubInterface::addSpikeToSendQueue(int neuron_id) {
     pthread_mutex_lock(&this->send_mutex);
     this->send_queue.push_back(neuron_id);
-    pthread_cond_signal(&this->send_cond);
+    pthread_cond_broadcast(&this->send_cond);
     pthread_mutex_unlock(&this->send_mutex);
 }
 
 void ICubInterface::enableSendQueue() {
     pthread_mutex_lock(&this->send_mutex);
     this->send_queue_enabled = true;
-    pthread_cond_signal(&this->send_cond);
+    pthread_cond_broadcast(&this->send_cond);
     pthread_mutex_unlock(&this->send_mutex);
 }
 
@@ -158,23 +121,25 @@ void ICubInterface::run() {
     pthread_mutex_unlock(&this->send_mutex);
 }
 
-void ICubInterface::end() {
+void ICubInterface::waitForStart() {
     pthread_mutex_lock(&this->send_mutex);
-    this->running = false;
-    pthread_cond_signal(&this->send_cond);
+    while (this->send_label == NULL) {
+        pthread_cond_wait(&this->send_cond, &this->send_mutex);
+    }
     pthread_mutex_unlock(&this->send_mutex);
 }
 
-int main(int argc, char **argv) {
-    ICubInterface *icub = new ICubInterface(
-        (char *) "from_icub", (char *) "to_icub");
-    icub->addSpikeToSendQueue(0);
-    icub->enableSendQueue();
-
-    fprintf(stderr, "Listening for database\n");
-    while (true) {
-        std::pair<int, int> spike = icub->getNextSpike(true);
-        fprintf(stderr, "Time %d: Received %d\n", spike.first, spike.second);
+void ICubInterface::waitForEnd() {
+    pthread_mutex_lock(&this->send_mutex);
+    while (this->send_label != NULL) {
+        pthread_cond_wait(&this->send_cond, &this->send_mutex);
     }
-    fprintf(stderr, "Exiting end of main\n");
+    pthread_mutex_unlock(&this->send_mutex);
+}
+
+void ICubInterface::end() {
+    pthread_mutex_lock(&this->send_mutex);
+    this->running = false;
+    pthread_cond_broadcast(&this->send_cond);
+    pthread_mutex_unlock(&this->send_mutex);
 }
