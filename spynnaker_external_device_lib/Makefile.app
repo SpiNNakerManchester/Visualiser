@@ -1,4 +1,5 @@
 OBJS=$(OBJECTS:%=build/%)
+CPPFLAGS += -std=gnu++11
 
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_DIR := $(dir $(MAKEFILE_PATH))

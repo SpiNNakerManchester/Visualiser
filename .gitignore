@@ -14,3 +14,7 @@
 vis
 /.cproject
 /Debug/
+application_generated_data_files
+reports
+receiver
+sender

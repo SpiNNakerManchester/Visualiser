@@ -6,6 +6,7 @@ OBJECTS = UDPConnection.o \
           ConnectionListener.o
    
 OBJS=$(OBJECTS:%=build/%)
+CPPFLAGS += -std=gnu++11
 
 UNAME_S := $(shell uname -s)
 ifeq ($(findstring MINGW, $(UNAME_S)), MINGW)
