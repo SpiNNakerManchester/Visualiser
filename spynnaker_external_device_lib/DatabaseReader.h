@@ -32,6 +32,9 @@ public:
     int get_n_neurons(char *label);
     float get_configuration_parameter_value(char *parameter_name);
     void close_database_connection();
+private:
+    void db_error();
+    sqlite3_stmt *db_prepare(const char *sql, ...);
 };
 
 #endif /* _DATABASE_READER_H_ */

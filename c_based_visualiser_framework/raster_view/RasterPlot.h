@@ -37,12 +37,12 @@ private:
         char* format, ...);
     void safelyshut();
 
-    const static int WINDOW_BORDER = 110;
-    const static int INIT_WINDOW_WIDTH = 800;
-    const static int INIT_WINDOW_HEIGHT = 600;
-    const static double FRAMES_PER_SECOND = 60.0;
-    const static int INIT_WINDOW_X = 100;
-    const static int INIT_WINDOW_Y = 100;
+    constexpr static int WINDOW_BORDER = 110;
+    constexpr static int INIT_WINDOW_WIDTH = 800;
+    constexpr static int INIT_WINDOW_HEIGHT = 600;
+    constexpr static double FRAMES_PER_SECOND = 60.0;
+    constexpr static int INIT_WINDOW_X = 100;
+    constexpr static int INIT_WINDOW_Y = 100;
 
     ColourReader *colour_reader;
     int argc;
