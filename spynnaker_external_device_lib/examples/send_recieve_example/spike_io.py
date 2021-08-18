@@ -1,18 +1,32 @@
-# imports of both spynnaker and external device plugin.
-import spynnaker.pyNN as Frontend
-import spynnaker_external_devices_plugin.pyNN as ExternalDevices
+# Copyright (c) 2017-2019 The University of Manchester
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# plotter in python
-import pylab
-import time
 import random
+import spynnaker8 as Frontend
+import time
 from threading import Condition
+from pyNN.utility.plotting import Figure, Panel
+import matplotlib.pyplot as plt
 
-# boolean allowing users to use python or c vis
-using_c_vis = False
+
+############################################################
+# Setup a Simulation to be injected into and received from #
+############################################################
 
 # initial call to set up the front end (pynn requirement)
-Frontend.setup(timestep=1.0, min_delay=1.0, max_delay=144.0)
+Frontend.setup(timestep=1.0, min_delay=1.0)
 
 
 # neurons per population and the length of runtime in ms for the simulation,
@@ -35,35 +49,12 @@ cell_params_lif = {'cm': 0.25,
                    }
 
 ##################################
-# Parameters for the injector population.  This is the minimal set of
-# parameters required, which is for a set of spikes where the key is not
-# important.  Note that a virtual key *will* be assigned to the population,
-# and that spikes sent which do not match this virtual key will be dropped;
-# however, if spikes are sent using 16-bit keys, they will automatically be
-# made to match the virtual key.  The virtual key assigned can be obtained
-# from the database.
-##################################
-cell_params_spike_injector = {
-
-    # The port on which the spiNNaker machine should listen for packets.
-    # Packets to be injected should be sent to this port on the spiNNaker
-    # machine
-    'port': 12345,
-}
-
-
-##################################
-# Parameters for the injector population.  Note that each injector needs to
-# be given a different port.  The virtual key is assigned here, rather than
-# being allocated later.  As with the above, spikes injected need to match
-# this key, and this will be done automatically with 16-bit keys.
+# Parameters for the injector population.
+# The virtual key is assigned here, rather than being allocated later.
+# Spikes injected need to match this key, and this will be done automatically
+# with 16-bit keys.
 ##################################
 cell_params_spike_injector_with_key = {
-
-    # The port on which the spiNNaker machine should listen for packets.
-    # Packets to be injected should be sent to this port on the spiNNaker
-    # machine
-    'port': 12346,
 
     # This is the base key to be used for the injection, which is used to
     # allow the keys to be routed around the spiNNaker machine.  This
@@ -73,24 +64,29 @@ cell_params_spike_injector_with_key = {
 }
 
 # create synfire populations (if cur exp)
-pop_forward = Frontend.Population(n_neurons, Frontend.IF_curr_exp,
-                                  cell_params_lif, label='pop_forward')
-pop_backward = Frontend.Population(n_neurons, Frontend.IF_curr_exp,
-                                   cell_params_lif, label='pop_backward')
+pop_forward = Frontend.Population(
+    n_neurons, Frontend.IF_curr_exp(**cell_params_lif), label='pop_forward')
+pop_backward = Frontend.Population(
+    n_neurons, Frontend.IF_curr_exp(**cell_params_lif), label='pop_backward')
 
 # Create injection populations
 injector_forward = Frontend.Population(
-    n_neurons, ExternalDevices.SpikeInjector,
-    cell_params_spike_injector_with_key, label='spike_injector_forward')
+    n_neurons, Frontend.external_devices.SpikeInjector(
+        database_notify_port_num=19999),
+    label='spike_injector_forward',
+    additional_parameters=cell_params_spike_injector_with_key)
 injector_backward = Frontend.Population(
-    n_neurons, ExternalDevices.SpikeInjector,
-    cell_params_spike_injector, label='spike_injector_backward')
+    n_neurons, Frontend.external_devices.SpikeInjector(
+        database_notify_port_num=19999),
+    label='spike_injector_backward')
 
 # Create a connection from the injector into the populations
-Frontend.Projection(injector_forward, pop_forward,
-                    Frontend.OneToOneConnector(weights=weight_to_spike))
-Frontend.Projection(injector_backward, pop_backward,
-                    Frontend.OneToOneConnector(weights=weight_to_spike))
+Frontend.Projection(
+    injector_forward, pop_forward, Frontend.OneToOneConnector(),
+    Frontend.StaticSynapse(weight=weight_to_spike))
+Frontend.Projection(
+    injector_backward, pop_backward, Frontend.OneToOneConnector(),
+    Frontend.StaticSynapse(weight=weight_to_spike))
 
 # Synfire chain connections where each neuron is connected to its next neuron
 # NOTE: there is no recurrent connection so that each chain stops once it
@@ -107,42 +103,34 @@ Frontend.Projection(pop_backward, pop_backward,
 
 # record spikes from the synfire chains so that we can read off valid results
 # in a safe way afterwards, and verify the behavior
-pop_forward.record()
-pop_backward.record()
+pop_forward.record('spikes')
+pop_backward.record('spikes')
 
 # Activate the sending of live spikes
-ExternalDevices.activate_live_output_for(
-    pop_forward, database_notify_host="localhost",
-    database_notify_port_num=19997)
-ExternalDevices.activate_live_output_for(
-    pop_backward, database_notify_host="localhost",
-    database_notify_port_num=19997)
+Frontend.external_devices.activate_live_output_for(
+    pop_forward,
+    database_notify_port_num=19999)
+Frontend.external_devices.activate_live_output_for(
+    pop_backward,
+    database_notify_port_num=19999)
 
-# Create a condition to avoid overlapping prints
-print_condition = Condition()
 
 # Run the simulation on spiNNaker
 Frontend.run(run_time)
 
-# Retrieve spikes from the synfire chain population
-spikes_forward = pop_forward.getSpikes()
-spikes_backward = pop_backward.getSpikes()
+spikes_forward = pop_forward.get_data('spikes')
+spikes_backward = pop_backward.get_data('spikes')
 
-# If there are spikes, plot using matplotlib
-if len(spikes_forward) != 0 or len(spikes_backward) != 0:
-    pylab.figure()
-    if len(spikes_forward) != 0:
-        pylab.plot([i[1] for i in spikes_forward],
-                   [i[0] for i in spikes_forward], "b.")
-    if len(spikes_backward) != 0:
-        pylab.plot([i[1] for i in spikes_backward],
-                   [i[0] for i in spikes_backward], "r.")
-    pylab.ylabel('neuron id')
-    pylab.xlabel('Time/ms')
-    pylab.title('spikes')
-    pylab.show()
-else:
-    print "No spikes received"
+Figure(
+    # raster plot of the presynaptic neuron spike times
+    Panel(spikes_forward.segments[0].spiketrains,
+          yticks=True, markersize=0.2, xlim=(0, run_time)),
+    Panel(spikes_backward.segments[0].spiketrains,
+          yticks=True, markersize=0.2, xlim=(0, run_time)),
+    title="Simple synfire chain example with injected spikes",
+    annotations="Simulated with {}".format(Frontend.name())
+)
+plt.show()
 
 # Clear data structures on spiNNaker to leave the machine in a clean state for
 # future executions

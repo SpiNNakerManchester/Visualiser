@@ -23,7 +23,7 @@ void SenderInterfaceBackward::spikes_start(
         sleep(time);
         fprintf(stderr, "waiting for %f seconds \n", time);
         (void) pthread_mutex_lock(this->cond);
-        printf("Sending forward spike %d", real_id);
+        fprintf(stderr, "Sending backward spike %d\n", real_id);
         (void) pthread_mutex_unlock(this->cond);
         connection->send_spike(label, real_id);
     }

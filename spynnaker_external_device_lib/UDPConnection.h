@@ -22,6 +22,8 @@ typedef unsigned short ushort;
 #include <stdlib.h>
 #include <string.h>
 
+#define SCP_SCAMP_PORT 17893
+
 static inline struct sockaddr *get_address(char *ip_address, int port) {
     struct hostent *lookup_address = gethostbyname(ip_address);
     if (lookup_address == NULL) {

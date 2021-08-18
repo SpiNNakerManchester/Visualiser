@@ -1,6 +1,7 @@
 #include "SpynnakerLiveSpikesConnection.h"
 #include "ConnectionListener.h"
 #include "EIEIOMessage.h"
+#include "SDPMessage.h"
 #include <stddef.h>
 #include <set>
 #include <stdlib.h>
@@ -92,11 +93,17 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
         char *send_label = this->send_labels[i];
         std::string send_label_str(send_label);
 
-        reverse_ip_tag_info *receive_info =
-            reader->get_live_input_details(send_label);
-        this->send_address_details[send_label_str] = get_address(
-            receive_info->board_address, receive_info->port);
-        free(receive_info);
+        std::vector<placement *> *placements = reader->get_placements(send_label);
+        placement *plmnt = (*placements)[0];
+        for (uint32_t i = 1; i < placements->size(); i++) {
+            placement *p = (*placements)[i];
+            free(p);
+        }
+        delete placements;
+        char *ip_address = reader->get_ip_address(plmnt->x, plmnt->y);
+        struct sockaddr *addr = get_address(ip_address, SCP_SCAMP_PORT);
+        free(ip_address);
+        this->send_address_details[send_label_str] = new send_details(addr, plmnt);
         this->neuron_id_to_key_maps[send_label_str] =
             reader->get_neuron_id_to_key_mapping(send_label);
         population_sizes[send_label_str] =
@@ -340,11 +347,16 @@ void SpynnakerLiveSpikesConnection::send_spikes(
             spikes_in_packet += 1;
         }
 
-        //locate socket details for where to send this to
-        unsigned char * data = (unsigned char *) malloc(message.get_max_size());
-        int size = message.get_data(data);
-        this->send_data_to(data, size,
-                           this->send_address_details[std::string(label)]);
+        // locate details for where to send this to
+        send_details *details = this->send_address_details[std::string(label)];
+
+        unsigned char * data = (unsigned char *) malloc(
+                message.get_max_size() + sizeof(SDPHeader) + 2);
+        int size = message.get_data(&data[sizeof(SDPHeader) + 2]) + sizeof(SDPHeader) + 2;
+        SDPHeader *sdp_header = (SDPHeader *) &data[2];
+        sdp_header->set_no_reply(
+                0, details->plmnt->x, details->plmnt->y, details->plmnt->p, 1);
+        this->send_data_to(data, size, details->address);
         free(data);
     }
 }

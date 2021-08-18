@@ -23,6 +23,16 @@ struct label_and_neuron_id {
     }
 };
 
+typedef struct send_details {
+    struct sockaddr *address;
+    placement *plmnt;
+
+    send_details(struct sockaddr *address, placement *placement) {
+        this->address = address;
+        this->plmnt = placement;
+    }
+} send_details;
+
 // The maximum number of 32-bit keys that will fit in a packet
 const int _MAX_FULL_KEYS_PER_PACKET = 63;
 
@@ -98,7 +108,7 @@ private:
 
     std::vector<char *> receive_labels;
     std::vector<char *> send_labels;
-    std::map<std::string, struct sockaddr *> send_address_details;
+    std::map<std::string, send_details *> send_address_details;
     std::map<std::string, std::map<int, int> *> neuron_id_to_key_maps;
     std::map<int, struct label_and_neuron_id *> key_to_neuron_id_and_label_map;
     std::map<std::string, std::vector<

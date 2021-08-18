@@ -14,3 +14,7 @@
 vis
 /.cproject
 /Debug/
+reports
+sender_receiver
+sender
+receiver

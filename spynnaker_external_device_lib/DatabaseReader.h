@@ -17,6 +17,11 @@ typedef struct reverse_ip_tag_info {
     int port;
 } reverse_ip_tag_info;
 
+typedef struct placement {
+    int x;
+    int y;
+    int p;
+} placement;
 
 class DatabaseReader {
     sqlite3 *db;
@@ -29,6 +34,8 @@ public:
     std::map<int, int> *get_neuron_id_to_key_mapping(char* label);
     ip_tag_info *get_live_output_details(char *label);
     reverse_ip_tag_info *get_live_input_details(char *label);
+    std::vector<placement *> *get_placements(char *label);
+    char *get_ip_address(int x, int y);
     int get_n_neurons(char *label);
     float get_configuration_parameter_value(char *parameter_name);
     void close_database_connection();
