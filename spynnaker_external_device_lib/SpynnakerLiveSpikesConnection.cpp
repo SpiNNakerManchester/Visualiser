@@ -46,6 +46,11 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         fprintf(stderr, "Error initializing live start condition\n");
         exit(-1);
     }
+    this->receiver_connection = NULL;
+    this->listener = NULL;
+    this->next_sync = SYNC_1;
+    this->root_chip_address = NULL;
+    this->app_id = 0;
 }
 
 void SpynnakerLiveSpikesConnection::add_initialize_callback(
@@ -111,40 +116,45 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
     }
 
     // get output data
-    std::set<int> ports_in_use;
-    for (int i = 0; i < this->receive_labels.size(); i++) {
-        char *receive_label = this->receive_labels[i];
-        std::string receive_label_str(receive_label);
+    if (this->receive_labels.size() > 0) {
+        this->receiver_connection = new UDPConnection();
+        for (int i = 0; i < this->receive_labels.size(); i++) {
+            char *receive_label = this->receive_labels[i];
+            std::string receive_label_str(receive_label);
 
-        ip_tag_info *send_info = reader->get_live_output_details(receive_label);
+            // Update the IP Tag to ensure reception
+            ip_tag_info *recv_info = reader->get_live_output_details(receive_label);
+            SCPIPTagSetMessage msg = SCPIPTagSetMessage(
+                    255, 255, recv_info->tag, recv_info->strip_sdp);
+            struct sockaddr *s_addr = get_address(recv_info->board_address,
+                    SCP_SCAMP_PORT);
+            unsigned char data[sizeof(SCPIPTagSetMessage) + 2];
+            memcpy(&data[2], &msg, sizeof(SCPIPTagSetMessage));
+            data[0] = 0;
+            data[1] = 0;
+            this->receiver_connection->send_data_to(
+                    data, sizeof(SCPIPTagSetMessage) + 2, s_addr);
+            this->receiver_connection->receive_data(data, sizeof(SCPIPTagSetMessage));
+            free(recv_info);
+            free(s_addr);
 
-        if (send_info->strip_sdp) {
-            std::set<int>::iterator value = ports_in_use.find(send_info->port);
-            if (value == ports_in_use.end()) {
-                UDPConnection *connection = new UDPConnection(send_info->port);
-                ConnectionListener *listener =
-                    new ConnectionListener(connection);
-                listener->add_receive_packet_callback(this);
-                listener->start();
-                ports_in_use.insert(send_info->port);
+            // get key to neuron mapping for reciever translation
+            std::map<int, int> *key_map = reader->get_key_to_neuron_id_mapping(
+                receive_label);
+            for (std::map<int, int>::iterator iter = key_map->begin();
+                    iter != key_map->end(); iter++) {
+
+                struct label_and_neuron_id* item =
+                    new label_and_neuron_id(receive_label, iter->second);
+                this->key_to_neuron_id_and_label_map[iter->first] = item;
             }
-        } else {
-            throw "Only tags which strip the SDP are supported";
-        }
-        free(send_info);
 
-        // get key to neuron mapping for reciever translation
-        std::map<int, int> *key_map = reader->get_key_to_neuron_id_mapping(
-            receive_label);
-        for (std::map<int, int>::iterator iter = key_map->begin();
-                iter != key_map->end(); iter++) {
-
-            struct label_and_neuron_id* item =
-                new label_and_neuron_id(receive_label, iter->second);
-            this->key_to_neuron_id_and_label_map[iter->first] = item;
+            population_sizes[receive_label_str] = key_map->size();
         }
 
-        population_sizes[receive_label_str] = key_map->size();
+        this->listener = new ConnectionListener(this->receiver_connection);
+        listener->add_receive_packet_callback(this);
+        listener->start();
     }
 
     for (std::map<std::string, int>::iterator iter =
@@ -160,6 +170,13 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
                 machine_time_step_ms);
         }
     }
+
+    // Get the address of the root chip
+    char *root_ip = reader->get_ip_address(0, 0);
+    this->root_chip_address = get_address(root_ip, SCP_SCAMP_PORT);
+    this->app_id = (int) reader->get_configuration_parameter_value(
+            (char *) std::string("app_id").c_str());
+    free(root_ip);
 
     pthread_mutex_lock(&(this->start_mutex));
     while (this->n_waiting_for_start > 0) {
@@ -388,7 +405,24 @@ void SpynnakerLiveSpikesConnection::send_start(char *label) {
     }
 }
 
+void SpynnakerLiveSpikesConnection::continue_run() {
+    SCPSyncSignalMessage msg = SCPSyncSignalMessage(this->app_id, this->next_sync);
+    if (this->next_sync == SYNC_1) {
+        this->next_sync = SYNC_0;
+    } else {
+        this->next_sync = SYNC_1;
+    }
+    unsigned char data[sizeof(SCPSyncSignalMessage) + 2];
+    memcpy(&data[2], &msg, sizeof(SCPSyncSignalMessage));
+    data[0] = 0;
+    data[1] = 0;
+    UDPConnection conn = UDPConnection();
+    conn.send_data_to(
+            data, sizeof(SCPSyncSignalMessage) + 2, this->root_chip_address);
+    conn.receive_data(data, sizeof(SCPSyncSignalMessage));
+}
+
 SpynnakerLiveSpikesConnection::~SpynnakerLiveSpikesConnection(){
-    pthread_mutex_destroy(&(this->start_mutex));
+pthread_mutex_destroy(&(this->start_mutex));
     pthread_cond_destroy(&(this->start_condition));
 }

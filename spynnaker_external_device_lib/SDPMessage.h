@@ -3,9 +3,12 @@
 
 #define REPLY_NOT_EXPECTED 0x07
 #define REPLY_EXPECTED 0x87
+#define REPLY_EXPECTED_NOT_P2P (REPLY_EXPECTED | 0x20)
 
 #define SCP_SIGNAL_CMD 22
+#define SCP_IPTAG_CMD 26
 #define SIGNAL_MC_TYPE 0
+#define IPTAG_SET 1
 
 typedef enum sync_type {
     SYNC_0=4,
@@ -49,22 +52,22 @@ typedef struct SCPSyncSignalMessage {
     SDPHeader sdp_header;
     SCPHeader scp_header;
     unsigned int signal_type;
-    unsigned short signal;
-    unsigned char app_mask;
     unsigned char app_id;
+    unsigned char app_mask;
+    unsigned short signal;
     unsigned int core_mask;
 
     SCPSyncSignalMessage(unsigned char app_id, sync_type sync_signal) {
         this->sdp_header.flags = REPLY_EXPECTED;
-        this->sdp_header.tag = 0;
+        this->sdp_header.tag = 0xFF;
         this->sdp_header.dest_cpu = 0;
         this->sdp_header.dest_port = 0;
-        this->sdp_header.dest_x = 0;
-        this->sdp_header.dest_y = 0;
-        this->sdp_header.source_cpu = 0;
-        this->sdp_header.source_port = 0;
-        this->sdp_header.source_x = 0;
-        this->sdp_header.source_y = 0;
+        this->sdp_header.dest_x = 255;
+        this->sdp_header.dest_y = 255;
+        this->sdp_header.source_cpu = 0x1F;
+        this->sdp_header.source_port = 0x7;
+        this->sdp_header.source_x = 255;
+        this->sdp_header.source_y = 255;
         this->scp_header.cmd = SCP_SIGNAL_CMD;
         this->scp_header.sequence = 0;
         this->signal_type = SIGNAL_MC_TYPE;
@@ -74,5 +77,37 @@ typedef struct SCPSyncSignalMessage {
         this->core_mask = 0xFFFF;
     }
 } SCPSignalMessage;
+
+typedef struct SCPIPTagSetMessage {
+    SDPHeader sdp_header;
+    SCPHeader scp_header;
+    unsigned int tag:16;
+    unsigned int cmd:12;
+    unsigned int use_sender:2;
+    unsigned int strip_sdp_headers:2;
+    unsigned int port;
+    unsigned int ip_address;
+
+    SCPIPTagSetMessage(unsigned int x, unsigned int y, unsigned int tag, unsigned int strip_sdp_headers) {
+        this->sdp_header.flags = REPLY_EXPECTED_NOT_P2P;
+        this->sdp_header.tag = 0xFF;
+        this->sdp_header.dest_cpu = 0;
+        this->sdp_header.dest_port = 0;
+        this->sdp_header.dest_x = x;
+        this->sdp_header.dest_y = y;
+        this->sdp_header.source_cpu = 0x1F;
+        this->sdp_header.source_port = 0x7;
+        this->sdp_header.source_x = 0;
+        this->sdp_header.source_y = 0;
+        this->scp_header.cmd = SCP_IPTAG_CMD;
+        this->scp_header.sequence = 0;
+        this->strip_sdp_headers = strip_sdp_headers;
+        this->use_sender = 1;
+        this->cmd = IPTAG_SET;
+        this->tag = tag;
+        this->port = 0;
+        this->ip_address = 0;
+    }
+} SCPSetTagMessage;
 
 #endif

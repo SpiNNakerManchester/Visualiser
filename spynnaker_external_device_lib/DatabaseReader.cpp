@@ -97,6 +97,8 @@ ip_tag_info *DatabaseReader::get_live_output_details(char *label) {
     tag_info->ip_address = get_column_string_copy(compiled_statment, 0);
     tag_info->port = sqlite3_column_int(compiled_statment, 1);
     tag_info->strip_sdp = sqlite3_column_int(compiled_statment, 2) == 1;
+    tag_info->board_address = get_column_string_copy(compiled_statment, 3);
+    tag_info->tag = sqlite3_column_int(compiled_statment, 4);
     return tag_info;
 }
 

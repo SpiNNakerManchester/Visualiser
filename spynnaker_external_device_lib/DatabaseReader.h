@@ -10,6 +10,8 @@ typedef struct ip_tag_info {
     char *ip_address;
     int port;
     bool strip_sdp;
+    char *board_address;
+    int tag;
 } ip_tag_info;
 
 typedef struct reverse_ip_tag_info {

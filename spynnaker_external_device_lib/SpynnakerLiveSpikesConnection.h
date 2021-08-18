@@ -3,6 +3,7 @@
 #include "Threadable.h"
 #include "ConnectionListener.h"
 #include "EIEIOMessage.h"
+#include "SDPMessage.h"
 
 #include <string>
 #include <vector>
@@ -96,6 +97,7 @@ public:
     void send_spikes(
         char *label, std::vector<int> n_neuron_ids, bool send_full_keys=false);
     void send_start(char *label=NULL);
+    void continue_run();
     ~SpynnakerLiveSpikesConnection();
     virtual void read_database_callback(DatabaseReader *reader);
     virtual void start_callback();
@@ -124,6 +126,11 @@ private:
     pthread_mutex_t start_mutex;
     std::map<std::string, bool> waiting_for_start;
     int n_waiting_for_start;
+    UDPConnection *receiver_connection;
+    ConnectionListener *listener;
+    struct sockaddr *root_chip_address;
+    unsigned char app_id;
+    sync_type next_sync;
 };
 
 #endif /* _SPYNNAKER_LIVE_SPIKES_CONNECTION_H_ */
