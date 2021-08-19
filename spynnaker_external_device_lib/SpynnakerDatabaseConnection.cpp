@@ -23,7 +23,7 @@ void SpynnakerDatabaseConnection::run() {
 
     this->running = true;
     while (this->running) {
-    
+
         // Wait for notification that the database has been written
         unsigned char data[MAX_PACKET_SIZE];
         struct sockaddr_in address;
@@ -48,7 +48,6 @@ void SpynnakerDatabaseConnection::run() {
         unsigned char unused_data[MAX_PACKET_SIZE];
         this->receive_data(unused_data, MAX_PACKET_SIZE);
         if (this->start_callback != NULL) {
-            
             // Call the start callback
             this->start_callback->start_callback();
         }
@@ -57,7 +56,6 @@ void SpynnakerDatabaseConnection::run() {
         unsigned char unused_data2[MAX_PACKET_SIZE];
         this->receive_data(unused_data2, MAX_PACKET_SIZE);
         if (this->pause_stop_callback != NULL){
-            
             // Call the pause stop callback
             this->pause_stop_callback->pause_stop_callback();
         }

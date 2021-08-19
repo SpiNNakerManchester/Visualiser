@@ -22,7 +22,7 @@ int main(int argc, char **argv){
         connection.add_receive_callback((char*) receive_label1, receiver_callback);
         connection.add_receive_callback((char*) receive_label2, receiver_callback);
 
-        while(true){
+        while (true){
             sleep(1);
         }
     }

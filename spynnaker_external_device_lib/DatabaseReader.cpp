@@ -15,7 +15,7 @@ static inline char *get_column_string_copy(sqlite3_stmt *compiled_statement,
     return labelcopy;
 }
 
-static void __attribute__((noreturn)) fail(const char *fmt,...) {
+static void __attribute__((noreturn)) fail(const char *fmt, ...) {
     va_list arg_list;
 
     va_start(arg_list, fmt);

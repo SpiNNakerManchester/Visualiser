@@ -24,7 +24,7 @@ int main(int argc, char **argv){
         ContinueInterface *continue_callback = new ContinueInterface();
         connection.add_start_callback((char *) receive_label, continue_callback);
 
-        while(true){
+        while (true){
             sleep(1);
         }
     }

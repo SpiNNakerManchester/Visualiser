@@ -88,7 +88,8 @@ typedef struct SCPIPTagSetMessage {
     unsigned int port;
     unsigned int ip_address;
 
-    SCPIPTagSetMessage(unsigned int x, unsigned int y, unsigned int tag, unsigned int strip_sdp_headers) {
+    SCPIPTagSetMessage(unsigned int x, unsigned int y, unsigned int tag,
+            unsigned int strip_sdp_headers) {
         this->sdp_header.flags = REPLY_EXPECTED_NOT_P2P;
         this->sdp_header.tag = 0xFF;
         this->sdp_header.dest_cpu = 0;

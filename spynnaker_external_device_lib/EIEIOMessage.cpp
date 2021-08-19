@@ -427,7 +427,7 @@ int EIEIOMessage::get_max_size(){
 int EIEIOMessage::get_data(unsigned char * data){
     int offset = 0;
     offset = this->_header->convert_to_bytes(data, offset);
-    for(int position = 0; position < this->_data.size(); position ++) {
+    for (int position = 0; position < this->_data.size(); position ++) {
         offset = this->_data[position]->convert_to_bytes(
             data, offset, this->_header->get_type());
     }

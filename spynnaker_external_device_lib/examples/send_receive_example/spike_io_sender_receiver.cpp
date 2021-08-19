@@ -46,7 +46,7 @@ int main(int argc, char **argv){
         connection.add_start_callback((char *) send_label2,
                                       sender_callback_backward);
 
-        while(true){
+        while (true){
             sleep(1);
         }
     }
