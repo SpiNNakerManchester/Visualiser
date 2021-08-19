@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2021 The University of Manchester
+# Copyright (c) 2021 The University of Manchester
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,11 +11,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-OBJECTS = stepped_receiver.o \
-          receiver_interface.o \
-          continue_interface.o
+# along with this program.  If not, see <http://www.gnu.org/licenses/
+import os
 
-APP = stepped_receiver
-
-include ../../Makefile.app
+def binary_path(binary_name):
+    path = os.path.dirname(__file__)
+    return os.path.join(path, binary_name)

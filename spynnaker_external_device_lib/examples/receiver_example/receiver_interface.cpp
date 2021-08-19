@@ -17,10 +17,6 @@
 #include "receiver_interface.h"
 #include <stdio.h>
 
-ReceiverInterface::ReceiverInterface(){
-
-}
-
 void ReceiverInterface::receive_spikes(
         char *label, int time, int n_spikes, int* spikes){
     for (int neuron_id_position = 0;  neuron_id_position < n_spikes;
@@ -28,4 +24,5 @@ void ReceiverInterface::receive_spikes(
          printf("Received spike at time %d, from %s - %d \n",
                 time, label, spikes[neuron_id_position]);
     }
+    this->n_spikes += n_spikes;
 }

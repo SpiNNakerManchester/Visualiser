@@ -29,7 +29,7 @@ void ContinueInterface::spikes_start(
         char *label, SpynnakerLiveSpikesConnection *connection){
     for (int neuron_id = 0; neuron_id < 100; neuron_id += 20){
         sleep(1);
-        fprintf(stderr, "Sending continue\n");
+        printf("Sending continue\n");
         connection->continue_run();
     }
 }

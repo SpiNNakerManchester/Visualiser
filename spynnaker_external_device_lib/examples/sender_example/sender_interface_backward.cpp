@@ -36,10 +36,10 @@ void SenderInterfaceBackward::spikes_start(
     for (int neuron_id = 0; neuron_id < 100; neuron_id += 20){
         int real_id = 100 - neuron_id - 1;
         float time =  (((float)(rand() % 100)) / 100) + 0.5;
-        fprintf(stderr, "waiting for %f seconds \n", time);
+        printf("waiting for %f seconds \n", time);
         sleep(time);
         (void) pthread_mutex_lock(this->cond);
-        fprintf(stderr, "Sending backward spike %d \n", real_id);
+        printf("Sending backward spike %d \n", real_id);
         (void) pthread_mutex_unlock(this->cond);
         connection->send_spike(label, real_id);
     }

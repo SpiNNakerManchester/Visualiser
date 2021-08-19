@@ -27,8 +27,9 @@ void ReceiverInterface::receive_spikes(
     (void) pthread_mutex_lock(this->cond);
     for (int neuron_id_position = 0;  neuron_id_position < n_spikes;
             neuron_id_position++){
-         fprintf(stderr, "Received spike at time %d, from %s - %d \n",
+         printf("Received spike at time %d, from %s - %d \n",
                 time, label, spikes[neuron_id_position]);
     }
+    this->n_spikes += n_spikes;
     (void) pthread_mutex_unlock(this->cond);
 }

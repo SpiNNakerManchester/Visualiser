@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../SpynnakerLiveSpikesConnection.h"
+#include "../../WaitForStop.h"
 #include "receiver_interface.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -31,16 +32,20 @@ int main(int argc, char **argv){
         char* send_labels[0];
         char const* local_host = NULL;
         SpynnakerLiveSpikesConnection connection = SpynnakerLiveSpikesConnection(
-            2, receive_labels, 0, send_labels, (char*) local_host, 19996);
-        // build the SpikeReceiveCallbackInterface
+            2, receive_labels, 0, send_labels);
+        fprintf(stderr, "Listening on %u\n", connection.get_local_port());
+
+        // Register SpikeReceiveCallbackInterface
         ReceiverInterface* receiver_callback = new ReceiverInterface();
-        // register the callback with the SpynnakerLiveSpikesConnection
         connection.add_receive_callback((char*) receive_label1, receiver_callback);
         connection.add_receive_callback((char*) receive_label2, receiver_callback);
 
-        while (true){
-            sleep(1);
-        }
+        // Stop interface
+        WaitForStop *wait_for_stop = new WaitForStop();
+        connection.add_pause_stop_callback((char*) receive_label1, wait_for_stop);
+
+        wait_for_stop->wait_for_stop();
+        fprintf(stderr, "Received %u spikes", receiver_callback->get_n_spikes());
     }
     catch (char const* msg){
         printf("%s \n", msg);

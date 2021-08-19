@@ -42,12 +42,10 @@ static void __attribute__((noreturn)) fail(const char *fmt, ...) {
 
 DatabaseReader::DatabaseReader(char *database_path) {
     int rc;
-    fprintf(stderr, "Reading database %s\n", database_path);
     rc = sqlite3_open(database_path, &this->db);
     if (rc) {
         fail("Can't open database: %s\n", sqlite3_errmsg(this->db));
     }
-    fprintf(stderr, "Opened database successfully\n");
 }
 
 DatabaseReader::~DatabaseReader() {

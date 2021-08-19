@@ -18,3 +18,6 @@ reports
 sender_receiver
 sender
 receiver
+stepped_receiver
+/.pytest_cache/
+/*.egg-info/

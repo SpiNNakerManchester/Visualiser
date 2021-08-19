@@ -68,6 +68,9 @@ public:
     void send_data(unsigned char *data, int length);
     void send_data_to(unsigned char *data, int length,
                       struct sockaddr* address);
+    int get_local_port() {
+        return this->local_port;
+    }
 
 private:
     int sock;

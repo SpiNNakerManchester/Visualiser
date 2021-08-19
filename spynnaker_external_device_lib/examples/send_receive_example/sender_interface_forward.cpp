@@ -35,9 +35,9 @@ void SenderInterfaceForward::spikes_start(
     for (int neuron_id = 0; neuron_id < 100; neuron_id += 20){
         float time =  (((float)(rand() % 100)) / 100) + 0.5;
         sleep(time);
-        fprintf(stderr, "waiting for %f seconds \n", time);
+        printf("waiting for %f seconds \n", time);
         (void) pthread_mutex_lock(this->cond);
-        fprintf(stderr, "Sending forward spike %d\n", neuron_id);
+        printf("Sending forward spike %d\n", neuron_id);
         (void) pthread_mutex_unlock(this->cond);
         connection->send_spike(label, neuron_id);
     }

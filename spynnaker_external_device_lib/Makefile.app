@@ -31,13 +31,13 @@ ifeq ($(UNAME_S), Linux)
 endif
 
 
-all: $(APP)
+all: $(CURRENT_DIR)../visualiser_example_binaries/$(APP)
 
 build/%.o: %.cpp
 	-@mkdir -p $(dir $@)
 	$(CXX) -I$(CURRENT_DIR) $(CPPFLAGS) -o $@ -c $<
 
-$(APP): $(OBJS)
+$(CURRENT_DIR)../visualiser_example_binaries/$(APP): $(OBJS)
 	$(CXX) $(PRE_LDFLAGS) -L$(CURRENT_DIR) -o $@ $^ $(LIBS)
 
 clean:

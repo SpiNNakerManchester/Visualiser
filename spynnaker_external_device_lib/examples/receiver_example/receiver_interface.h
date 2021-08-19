@@ -16,8 +16,12 @@
  */
 #include "../../SpynnakerLiveSpikesConnection.h"
 
-class ReceiverInterface : public SpikeReceiveCallbackInterface{
+class ReceiverInterface : public SpikeReceiveCallbackInterface {
 public:
     void receive_spikes(char *label, int time, int n_spikes, int* spikes);
-    ReceiverInterface();
+    int get_n_spikes() {
+        return this->n_spikes;
+    }
+private:
+    int n_spikes = 0;
 };
