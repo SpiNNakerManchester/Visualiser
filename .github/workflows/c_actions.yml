@@ -26,7 +26,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install system dependencies
-      run: sudo apt-get -q install libsqlite3-dev freeglut3-dev --fix-missing
+      run: sudo apt-get -q update && sudo apt-get -q -y install libsqlite3-dev freeglut3-dev --fix-missing
     - name: Build C code
       run: |
         make
