@@ -18,7 +18,7 @@ ColourReader::ColourReader(char *path) {
         int b;
         struct colour colour;
         char *pop_label = (char *) malloc(80);
-        sscanf(line, "%s\t%d\t%d\t%d",pop_label, &r, &g, &b);
+        sscanf(line, "%s\t%d\t%d\t%d", pop_label, &r, &g, &b);
         colour.r = (float) r / 255.0;
         colour.g = (float) g / 255.0;
         colour.b = (float) b / 255.0;

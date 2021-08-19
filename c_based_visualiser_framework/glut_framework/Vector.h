@@ -174,23 +174,23 @@ template <class T> Vector<T> Vector<T>::operator/(T rhs) const {
     return result;
 }
 
-template <class T> Vector<T> &Vector<T>::operator=( const Vector<T> &other ) {
-    if( this == &other ) {
+template <class T> Vector<T> &Vector<T>::operator=(const Vector<T> &other) {
+    if (this == &other) {
         return *this;
     }
     setVector( other.x, other.y, other.z );
     return *this;
 }
 
-template <class T> T Vector<T>::dot( const Vector<T> &v1 ) const {
-    return  ( x * v1.x + y * v1.y + z * v1.z );
+template <class T> T Vector<T>::dot(const Vector<T> &v1) const {
+    return (x * v1.x + y * v1.y + z * v1.z);
 }
 
-template <class T> T Vector<T>::dot( Point<T> p1 ) const {
-    return ( x * p1.x + y * p1.y + z * p1.z );
+template <class T> T Vector<T>::dot(Point<T> p1) const {
+    return (x * p1.x + y * p1.y + z * p1.z);
 }
 
-template <class T> Vector<T> Vector<T>::cross( const Vector<T> &v1 ) const {
+template <class T> Vector<T> Vector<T>::cross(const Vector<T> &v1) const {
     Vector<T> result;
     result.x = ( y * v1.z - z * v1.y );
     result.y = -( x * v1.z - z * v1.x );
@@ -205,7 +205,7 @@ template <class T> T Vector<T>::length() const {
 template <class T> void Vector<T>::normalize() {
     T length = this->length(); /* Compute the magnitude */
 
-    if( length != 0 ) { /* Prevent divide by zero */
+    if (length != 0) { /* Prevent divide by zero */
         x /= length;
         y /= length;
         z /= length;
@@ -220,7 +220,8 @@ template <class T> void Vector<T>::reverse() {
     z = -z;
 }
 
-template <class T> Vector<T> Vector<T>::reflect( const Vector<T> &source, const Vector<T> &normal ) {
+template <class T> Vector<T> Vector<T>::reflect( const Vector<T> &source,
+        const Vector<T> &normal ) {
     Vector<T> result = (normal * (2.0 * source.dot( normal ) ) );
     result = source - result;
     result.normalize();

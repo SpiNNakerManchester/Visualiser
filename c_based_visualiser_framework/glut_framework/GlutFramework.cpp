@@ -70,7 +70,7 @@ void GlutFramework::display(float dTime) {
 }
 
 void GlutFramework::reshape(int width, int height) {
-    glViewport(0,0,(GLsizei)width,(GLsizei)height);
+    glViewport(0, 0, (GLsizei) width, (GLsizei) height);
 }
 
 void GlutFramework::mouseButtonPress(int button, int state, int x, int y) {
@@ -102,7 +102,7 @@ void GlutFramework::setInstance() {
 }
 
 void GlutFramework::run() {
-    if(frameRateTimer.isStopped()) {
+    if (frameRateTimer.isStopped()) {
         frameRateTimer.start();
     }
 
@@ -111,7 +111,7 @@ void GlutFramework::run() {
     double milliseconds = frameRateTimer.getElapsedMilliseconds();
     frameTimeElapsed += milliseconds;
 
-    if( frameTimeElapsed >= this->frameTime ) {
+    if (frameTimeElapsed >= this->frameTime) {
 
         // If the time exceeds a certain "frame rate" then show the next
         // frame
@@ -159,17 +159,17 @@ void GlutFramework::mouseMoveWrapper(int x, int y) {
 }
 
 void GlutFramework::keyboardDownWrapper(unsigned char key, int x, int y) {
-    instance->keyboardDown(key,x,y);
+    instance->keyboardDown(key, x, y);
 }
 
 void GlutFramework::keyboardUpWrapper(unsigned char key, int x, int y) {
-    instance->keyboardUp(key,x,y);
+    instance->keyboardUp(key, x, y);
 }
 
 void GlutFramework::specialKeyboardDownWrapper(int key, int x, int y) {
-    instance->specialKeyboardDown(key,x,y);
+    instance->specialKeyboardDown(key, x, y);
 }
 
 void GlutFramework::specialKeyboardUpWrapper(int key, int x, int y) {
-    instance->specialKeyboardUp(key,x,y);
+    instance->specialKeyboardUp(key, x, y);
 }
