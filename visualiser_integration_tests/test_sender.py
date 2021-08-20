@@ -170,3 +170,7 @@ def test_sender():
     n_spikes = sum(len(s) for s in spikes_forward)
     n_spikes += sum(len(s) for s in spikes_backward)
     assert(n_spikes == 600)
+
+
+if __name__ == "__main__":
+    test_sender()

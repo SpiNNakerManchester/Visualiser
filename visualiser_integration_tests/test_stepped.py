@@ -50,3 +50,7 @@ def test_stepped():
     print("Done")
 
     assert(last_line == "Received 100 spikes")
+
+
+if __name__ == "__main__":
+    test_stepped()

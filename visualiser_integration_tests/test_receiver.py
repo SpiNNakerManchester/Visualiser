@@ -194,3 +194,7 @@ def test_receiver():
     n_spikes = sum(len(s) for s in spikes_forward)
     n_spikes += sum(len(s) for s in spikes_backward)
     assert(last_line == f"Received {n_spikes} spikes")
+
+
+if __name__ == "__main__":
+    test_receiver()
