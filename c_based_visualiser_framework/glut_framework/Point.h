@@ -82,7 +82,8 @@ public:
      * Display a point
      */
     friend std::ostream & operator<<(std::ostream &os, const Point &point) {
-        return os << "Point: (" << point.x  << ", " << point.y << ", " << point.z << ", " << point.w << ")";
+        return os << "Point: (" << point.x  << ", " << point.y << ", "
+                << point.z << ", " << point.w << ")";
     }
 };
 
@@ -111,8 +112,10 @@ template <class T> Point<T>::Point( const Point &other ) {
 
 template <class T> Point<T>& Point<T>::operator=(const Point &rhs) {
     // Check for self-assignment
-    if (this == &rhs)
-        return *this;        // skip and return this
+    if (this == &rhs) {
+        // skip and return this
+        return *this;
+    }
 
     x = rhs.x;
     y = rhs.y;
@@ -123,7 +126,7 @@ template <class T> Point<T>& Point<T>::operator=(const Point &rhs) {
 }
 
 template <class T> bool Point<T>::operator==(const Point<T> &other) const {
-    if( x == other.x && y == other.y && z == other.z && w == other.w ) {
+    if (x == other.x && y == other.y && z == other.z && w == other.w) {
         return true;
     }
     return false;
@@ -135,15 +138,15 @@ template <class T> bool Point<T>::operator!=(const Point<T> &other) const {
 
 /* Calculate the distance between this point and a given point */
 template <class T> T Point<T>::distance( const Point &other ) const {
-    return sqrt(	(other.x - x)*(other.x - x) +
+    return sqrt((other.x - x)*(other.x - x) +
                 (other.y - y)*(other.y - y) +
-                (other.z - z)*(other.z - z) );
+                (other.z - z)*(other.z - z));
 }
 
 /* Transform the point by a given amount (x,y,z). */
 template <class T> void Point<T>::transform( T matrix[4][4] ) {
     // Matrix multiplication
-    T value[] = { 0, 0, 0, 1 };
+    T value[] = {0, 0, 0, 1};
     value[0] = matrix[0][0] * x + matrix[0][1] * y + matrix[0][2] * z + matrix[0][3] * w;
     value[1] = matrix[1][0] * x + matrix[1][1] * y + matrix[1][2] * z + matrix[1][3] * w;
     value[2] = matrix[2][0] * x + matrix[2][1] * y + matrix[2][2] * z + matrix[2][3] * w;

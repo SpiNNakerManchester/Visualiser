@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2015-2021 The University of Manchester
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "SpynnakerDatabaseConnection.h"
 
 #define MAX_PACKET_SIZE 300
@@ -23,7 +39,7 @@ void SpynnakerDatabaseConnection::run() {
 
     this->running = true;
     while (this->running) {
-    
+
         // Wait for notification that the database has been written
         unsigned char data[MAX_PACKET_SIZE];
         struct sockaddr_in address;
@@ -48,7 +64,6 @@ void SpynnakerDatabaseConnection::run() {
         unsigned char unused_data[MAX_PACKET_SIZE];
         this->receive_data(unused_data, MAX_PACKET_SIZE);
         if (this->start_callback != NULL) {
-            
             // Call the start callback
             this->start_callback->start_callback();
         }
@@ -57,7 +72,6 @@ void SpynnakerDatabaseConnection::run() {
         unsigned char unused_data2[MAX_PACKET_SIZE];
         this->receive_data(unused_data2, MAX_PACKET_SIZE);
         if (this->pause_stop_callback != NULL){
-            
             // Call the pause stop callback
             this->pause_stop_callback->pause_stop_callback();
         }

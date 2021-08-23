@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2015-2021 The University of Manchester
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "EIEIOMessage.h"
 #include <stddef.h>
 #include <stdexcept>
@@ -9,6 +25,7 @@
 // build a basic eieio element
 EIEIOElement::EIEIOElement(int key) {
     this->_key = key;
+    this->_payload = 0;
     this->_has_payload = false;
 }
 
@@ -143,7 +160,7 @@ EIEIOHeader* EIEIOHeader::create_from_byte_array(
                 payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
             }
             else {
-            	payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
+                payload_prefix = EIEIOHeader::read_element(offset + 2, data, 4);
             }
         }
     }
@@ -426,7 +443,7 @@ int EIEIOMessage::get_max_size(){
 int EIEIOMessage::get_data(unsigned char * data){
     int offset = 0;
     offset = this->_header->convert_to_bytes(data, offset);
-    for(int position = 0; position < this->_data.size(); position ++) {
+    for (int position = 0; position < this->_data.size(); position ++) {
         offset = this->_data[position]->convert_to_bytes(
             data, offset, this->_header->get_type());
     }

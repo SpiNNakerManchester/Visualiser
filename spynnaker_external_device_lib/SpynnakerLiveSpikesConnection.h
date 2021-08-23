@@ -1,8 +1,25 @@
+/*
+ * Copyright (c) 2015-2021 The University of Manchester
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "SpynnakerDatabaseConnection.h"
 #include "DatabaseReader.h"
 #include "Threadable.h"
 #include "ConnectionListener.h"
 #include "EIEIOMessage.h"
+#include "SDPMessage.h"
 
 #include <string>
 #include <vector>
@@ -22,6 +39,16 @@ struct label_and_neuron_id {
         this->neuron_id = neuron_id;
     }
 };
+
+typedef struct send_details {
+    struct sockaddr *address;
+    placement *plmnt;
+
+    send_details(struct sockaddr *address, placement *placement) {
+        this->address = address;
+        this->plmnt = placement;
+    }
+} send_details;
 
 // The maximum number of 32-bit keys that will fit in a packet
 const int _MAX_FULL_KEYS_PER_PACKET = 63;
@@ -86,6 +113,7 @@ public:
     void send_spikes(
         char *label, std::vector<int> n_neuron_ids, bool send_full_keys=false);
     void send_start(char *label=NULL);
+    void continue_run();
     ~SpynnakerLiveSpikesConnection();
     virtual void read_database_callback(DatabaseReader *reader);
     virtual void start_callback();
@@ -98,7 +126,7 @@ private:
 
     std::vector<char *> receive_labels;
     std::vector<char *> send_labels;
-    std::map<std::string, struct sockaddr *> send_address_details;
+    std::map<std::string, send_details *> send_address_details;
     std::map<std::string, std::map<int, int> *> neuron_id_to_key_maps;
     std::map<int, struct label_and_neuron_id *> key_to_neuron_id_and_label_map;
     std::map<std::string, std::vector<
@@ -114,6 +142,11 @@ private:
     pthread_mutex_t start_mutex;
     std::map<std::string, bool> waiting_for_start;
     int n_waiting_for_start;
+    UDPConnection *receiver_connection;
+    ConnectionListener *listener;
+    struct sockaddr *root_chip_address;
+    unsigned char app_id;
+    sync_type next_sync;
 };
 
 #endif /* _SPYNNAKER_LIVE_SPIKES_CONNECTION_H_ */

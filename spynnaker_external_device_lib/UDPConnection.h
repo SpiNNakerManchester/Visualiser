@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2015-2021 The University of Manchester
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #ifndef _UDP_CONNECTION_H_
 #define _UDP_CONNECTION_H_
 
@@ -7,8 +23,8 @@
 #else
 #include <windows.h>
 #include <ws2tcpip.h>
-#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
-#define bcopy(b1,b2,len) (memmove((b2), (b1), (len)), (void) 0)
+#define bzero(b, len) (memset((b), '\0', (len)), (void) 0)
+#define bcopy(b1, b2, len) (memmove((b2), (b1), (len)), (void) 0)
 #define close(sock)
 
 #define SHUT_RD   SD_RECEIVE
@@ -21,6 +37,8 @@ typedef unsigned short ushort;
 
 #include <stdlib.h>
 #include <string.h>
+
+#define SCP_SCAMP_PORT 17893
 
 static inline struct sockaddr *get_address(char *ip_address, int port) {
     struct hostent *lookup_address = gethostbyname(ip_address);
@@ -50,6 +68,9 @@ public:
     void send_data(unsigned char *data, int length);
     void send_data_to(unsigned char *data, int length,
                       struct sockaddr* address);
+    int get_local_port() {
+        return this->local_port;
+    }
 
 private:
     int sock;

@@ -28,7 +28,8 @@
 PerformanceTimer::PerformanceTimer() {
 
 #ifdef WIN32
-    QueryPerformanceFrequency(&_freq);	// Retrieves the frequency of the high-resolution performance counter
+    // Retrieves the frequency of the high-resolution performance counter
+    QueryPerformanceFrequency(&_freq);
     _start.QuadPart = 0;
     _end.QuadPart = 0;
 #else
@@ -47,9 +48,11 @@ PerformanceTimer::~PerformanceTimer() {
 
 void PerformanceTimer::start() {
 #ifdef WIN32
-     QueryPerformanceCounter(&_start);	// Retrieves the current value of the high-resolution performance counter
+     // Retrieves the current value of the high-resolution performance counter
+     QueryPerformanceCounter(&_start);
 #else
-    gettimeofday(&_start, NULL);		// Get the starting time
+    // Get the starting time
+    gettimeofday(&_start, NULL);
 #endif
     _isStopped = false;
 }
@@ -71,7 +74,7 @@ bool PerformanceTimer::isStopped() const {
 double PerformanceTimer::getElapsedMicroseconds() {
     double microSecond = 0;
 
-    if(!_isStopped) {
+    if (!_isStopped) {
 #ifdef WIN32
         QueryPerformanceCounter(&_end);
 #else
@@ -80,11 +83,13 @@ double PerformanceTimer::getElapsedMicroseconds() {
     }
 
 #ifdef WIN32
-    if(_start.QuadPart != 0 && _end.QuadPart != 0) {
-        microSecond = (_end.QuadPart - _start.QuadPart) * (1000000.0 / _freq.QuadPart);
+    if (_start.QuadPart != 0 && _end.QuadPart != 0) {
+        microSecond = (_end.QuadPart - _start.QuadPart)
+                * (1000000.0 / _freq.QuadPart);
     }
 #else
-    microSecond = (_end.tv_sec * 1000000.0 + _end.tv_usec) - (_start.tv_sec * 1000000.0 + _start.tv_usec);
+    microSecond = (_end.tv_sec * 1000000.0 + _end.tv_usec)
+            - (_start.tv_sec * 1000000.0 + _start.tv_usec);
 #endif
 
     return microSecond;

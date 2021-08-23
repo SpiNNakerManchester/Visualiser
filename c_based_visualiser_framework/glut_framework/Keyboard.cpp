@@ -25,21 +25,21 @@
 #include "Keyboard.h"
 
 Keyboard::Keyboard() {
-    for( int i = 0; i < NUMBER_KEYS; i++ ) {
-        keys[ i ] = UP;
+    for (int i = 0; i < NUMBER_KEYS; i++) {
+        keys[i] = UP;
     }
 }
 
 void Keyboard::keyDown( int key ) {
-    keys[ key ] = DOWN;
+    keys[key] = DOWN;
 }
 
 void Keyboard::keyUp( int key ) {
-    keys[ key ] = UP;
+    keys[key] = UP;
 }
 
 bool Keyboard::isKeyDown( int key ) {
-    if( keys[ key ] == DOWN ) {
+    if (keys[key] == DOWN) {
         return true;
     } else {
         return false;
