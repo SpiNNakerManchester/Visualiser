@@ -193,7 +193,11 @@ def test_receiver():
 
     n_spikes = sum(len(s) for s in spikes_forward)
     n_spikes += sum(len(s) for s in spikes_backward)
-    assert(last_line == f"Received {n_spikes} spikes")
+
+    # Check spike count, assuming some might get lost
+    match = re.match("^Received (.*) spikes$", last_line)
+    assert(match)
+    assert(n_spikes // 2 <= int(match.group(1)) <= n_spikes)
 
 
 if __name__ == "__main__":
