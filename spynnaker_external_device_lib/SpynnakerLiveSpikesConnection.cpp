@@ -139,20 +139,24 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
             std::string receive_label_str(receive_label);
 
             // Update the IP Tag to ensure reception
-            ip_tag_info *recv_info = reader->get_live_output_details(receive_label);
-            SCPIPTagSetMessage msg = SCPIPTagSetMessage(
-                    255, 255, recv_info->tag, recv_info->strip_sdp);
-            struct sockaddr *s_addr = get_address(recv_info->board_address,
-                    SCP_SCAMP_PORT);
-            unsigned char data[sizeof(SCPIPTagSetMessage) + 2];
-            memcpy(&data[2], &msg, sizeof(SCPIPTagSetMessage));
-            data[0] = 0;
-            data[1] = 0;
-            this->receiver_connection->send_data_to(
-                    data, sizeof(SCPIPTagSetMessage) + 2, s_addr);
-            this->receiver_connection->receive_data(data, sizeof(SCPIPTagSetMessage));
-            free(recv_info);
-            free(s_addr);
+            try {
+                ip_tag_info *recv_info = reader->get_live_output_details(receive_label);
+                SCPIPTagSetMessage msg = SCPIPTagSetMessage(
+                        255, 255, recv_info->tag, recv_info->strip_sdp);
+                struct sockaddr *s_addr = get_address(recv_info->board_address,
+                        SCP_SCAMP_PORT);
+                unsigned char data[sizeof(SCPIPTagSetMessage) + 2];
+                memcpy(&data[2], &msg, sizeof(SCPIPTagSetMessage));
+                data[0] = 0;
+                data[1] = 0;
+                this->receiver_connection->send_data_to(
+                        data, sizeof(SCPIPTagSetMessage) + 2, s_addr);
+                this->receiver_connection->receive_data(data, sizeof(SCPIPTagSetMessage));
+                free(recv_info);
+                free(s_addr);
+            } catch (const char * str) {
+                fprintf(stderr, "Error sending Tag update to SpiNNaker, continuing\n");
+            }
 
             // get key to neuron mapping for reciever translation
             std::map<int, int> *key_map = reader->get_key_to_neuron_id_mapping(
