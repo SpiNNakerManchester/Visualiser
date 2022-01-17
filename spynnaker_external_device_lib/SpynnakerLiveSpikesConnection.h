@@ -142,8 +142,8 @@ public:
 private:
     static void *_call_start_callback(void *start_callback_info);
     static void *_call_pause_stop_callback(void *pause_stop_info);
-    static void handle_time_packet(EIEIOMessage *message);
-    static void handle_no_time_packet(EIEIOMessage *message);
+    void handle_time_packet(EIEIOMessage *message);
+    void handle_no_time_packet(EIEIOMessage *message);
 
     std::vector<char *> receive_labels;
     std::vector<char *> send_labels;
