@@ -35,6 +35,8 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         this->receive_labels.push_back(receive_labels[i]);
         this->live_spike_callbacks[receive_label] =
             std::vector<SpikeReceiveCallbackInterface *>();
+        this->live_payload_callbacks[receive_label] =
+            std::vector<PayloadReceiveCallbackInterface *>();
         this->start_callbacks[receive_label] =
             std::vector<SpikesStartCallbackInterface *>();
         this->waiting_for_start[receive_label] = wait_for_start;
@@ -77,6 +79,12 @@ void SpynnakerLiveSpikesConnection::add_initialize_callback(
 void SpynnakerLiveSpikesConnection::add_receive_callback(
         char *label, SpikeReceiveCallbackInterface *receive_callback) {
     this->live_spike_callbacks[std::string(label)].push_back(
+        receive_callback);
+}
+
+void SpynnakerLiveSpikesConnection::add_receive_callback(
+        char *label, PayloadReceiveCallbackInterface *receive_callback) {
+    this->live_payload_callbacks[std::string(label)].push_back(
         receive_callback);
 }
 
@@ -295,9 +303,15 @@ void *SpynnakerLiveSpikesConnection::_call_pause_stop_callback(
 
 void SpynnakerLiveSpikesConnection::receive_packet_callback(
         EIEIOMessage *message) {
-    if (!message->has_timestamps()) {
-        throw "Only packets with a timestamp are considered";
+    if (message->has_timestamps()) {
+        handle_time_packet(message);
+    } else {
+        handle_no_time_packet(message);
     }
+}
+
+void SpynnakerLiveSpikesConnection::handle_time_packet(
+        EIEIOMessage *message) {
     std::map<std::pair<int, std::string>, std::vector<int> *> key_times_labels;
     while (message->is_next_element()) {
         EIEIOElement* element = message->get_next_element();
@@ -334,6 +348,26 @@ void SpynnakerLiveSpikesConnection::receive_packet_callback(
             std::vector<int> *spikes = iter->second;
             callbacks[i]->receive_spikes(
                 (char *) label.c_str(), time, spikes->size(), &((*spikes)[0]));
+        }
+    }
+}
+
+void SpynnakerLiveSpikesConnection::handle_no_time_packet(
+        EIEIOMessage *message) {
+    while (message->is_next_element()) {
+        EIEIOElement* element = message->get_next_element();
+        int payload = element->get_payload();
+        int key = element->get_key();
+        std::map<int, struct label_and_neuron_id *>::iterator value =
+            this->key_to_neuron_id_and_label_map.find(key);
+        if (value != this->key_to_neuron_id_and_label_map.end()) {
+            struct label_and_neuron_id *item = value->second;
+            std::vector<PayloadReceiveCallbackInterface *> callbacks =
+                        this->live_payload_callbacks[item->label];
+            for (int i = 0; i < callbacks.size(); i++) {
+                callbacks[i]->receive_payload(
+                    item->label, item->neuron_id, payload);
+            }
         }
     }
 }
