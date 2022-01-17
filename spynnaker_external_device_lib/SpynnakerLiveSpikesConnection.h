@@ -50,11 +50,19 @@ typedef struct send_details {
     }
 } send_details;
 
+typedef struct rate_details {
+    int neuron_id;
+    float rate;
+} rate_details;
+
 // The maximum number of 32-bit keys that will fit in a packet
 const int _MAX_FULL_KEYS_PER_PACKET = 63;
 
 // The maximum number of 16-bit keys that will fit in a packet
 const int _MAX_HALF_KEYS_PER_PACKET = 127;
+
+// The maximum number of 32-bit keys and payloads that will fit in a packet
+const int _MAX_FULL_KEYS_PAYLOADS_PER_PACKET = 31;
 
 
 class SpikeInitializeCallbackInterface {
@@ -112,6 +120,8 @@ public:
         char *label, int neuron_id, bool send_full_keys=false);
     void send_spikes(
         char *label, std::vector<int> n_neuron_ids, bool send_full_keys=false);
+    void send_rate(char *label, int neuron_id, float rate);
+    void send_rates(char *label, std::vector<rate_details> details);
     void send_start(char *label=NULL);
     void continue_run();
     ~SpynnakerLiveSpikesConnection();

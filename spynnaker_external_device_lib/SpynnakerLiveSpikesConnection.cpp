@@ -406,6 +406,59 @@ void SpynnakerLiveSpikesConnection::send_spike(
         send_spikes(label, neuron_ids, send_full_keys);
 }
 
+void SpynnakerLiveSpikesConnection::send_rates(
+    char *label, std::vector<rate_details> details){
+
+    // figure max spikes size for each message
+    int max_keys = _MAX_FULL_KEYS_PAYLOADS_PER_PACKET;
+
+    // iterate till all spikes have been consumed
+    int pos = 0;
+    while (pos < details.size()) {
+
+        EIEIOHeader * header;
+        EIEIOType type = KEY_PAYLOAD_32_BIT;
+        EIEIOHeader* eieio_header =
+            new EIEIOHeader(0, 0, 0, 0, type, 0, 0, 0);
+        header = eieio_header;
+        EIEIOMessage message = EIEIOMessage(header);
+
+        int n_in_packet = 0;
+
+        // iterate till packet has been filled, or all spikes are consumed
+        while (pos < details.size() && n_in_packet < max_keys) {
+            int key;
+            std::map<int, int> * map = this->neuron_id_to_key_maps[label];
+            key = (*map)[details[pos].neuron_id];
+            int rate = (int) (details[pos].rate * 32768.0f);
+            message.add_key_and_payload(key, rate);
+            message.increment_count();
+            pos += 1;
+            n_in_packet += 1;
+        }
+
+        // locate details for where to send this to
+        send_details *details = this->send_address_details[std::string(label)];
+
+        unsigned char * data = (unsigned char *) malloc(
+                message.get_max_size() + sizeof(SDPHeader) + 2);
+        int size = message.get_data(&data[sizeof(SDPHeader) + 2]) + sizeof(SDPHeader) + 2;
+        SDPHeader *sdp_header = (SDPHeader *) &data[2];
+        sdp_header->set_no_reply(
+                0, details->plmnt->x, details->plmnt->y, details->plmnt->p, 1);
+        this->send_data_to(data, size, details->address);
+        free(data);
+    }
+}
+
+void SpynnakerLiveSpikesConnection::send_rate(
+    char* label, int neuron_id, float rate) {
+        // build a vector for the neuron_id, then call send spikes.
+        std::vector<rate_details> details;
+        details.push_back({.neuron_id=neuron_id, .rate=rate});
+        send_rates(label, details);
+}
+
 void SpynnakerLiveSpikesConnection::send_start(char *label) {
     if (label != NULL) {
         std::string label_str = std::string(label);
