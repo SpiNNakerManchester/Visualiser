@@ -55,6 +55,11 @@ typedef struct rate_details {
     float rate;
 } rate_details;
 
+typedef struct payload_details {
+    int neuron_id;
+    int payload;
+} payload_details;
+
 // The maximum number of 32-bit keys that will fit in a packet
 const int _MAX_FULL_KEYS_PER_PACKET = 63;
 
@@ -98,8 +103,8 @@ public:
 
 class PayloadReceiveCallbackInterface {
 public:
-    virtual void receive_payload(
-        char *label, int neuron_id, int payload) = 0;
+    virtual void receive_payloads(
+        char *label, int n_payloads, payload_details *payloads) = 0;
     virtual ~PayloadReceiveCallbackInterface() {};
 };
 

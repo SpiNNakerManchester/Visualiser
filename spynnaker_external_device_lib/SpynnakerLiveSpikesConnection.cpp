@@ -354,6 +354,7 @@ void SpynnakerLiveSpikesConnection::handle_time_packet(
 
 void SpynnakerLiveSpikesConnection::handle_no_time_packet(
         EIEIOMessage *message) {
+    std::map<std::string, std::vector<payload_details> *> label_payloads;
     while (message->is_next_element()) {
         EIEIOElement* element = message->get_next_element();
         int payload = element->get_payload();
@@ -362,11 +363,30 @@ void SpynnakerLiveSpikesConnection::handle_no_time_packet(
             this->key_to_neuron_id_and_label_map.find(key);
         if (value != this->key_to_neuron_id_and_label_map.end()) {
             struct label_and_neuron_id *item = value->second;
+            std::map<std::string,
+                     std::vector<payload_details> *>::iterator payloads_item =
+                         label_payloads.find(item->label);
+            std::vector<payload_details> *payloads = NULL;
+            if (payloads_item != label_payloads.end()) {
+                payloads = payloads_item->second;
+            } else {
+                payloads = new std::vector<payload_details>();
+                label_payloads[item->label] = payloads;
+            }
+            payloads->push_back({.neuron_id=item->neuron_id,
+                                 .payload=payload});
+        }
+        for (std::map<std::string, std::vector<payload_details> *>::iterator iter =
+                              label_payloads.begin();
+                    iter != label_payloads.end(); iter++) {
+            std::string label = iter->first;
+            std::vector<payload_details> *payloads = iter->second;
             std::vector<PayloadReceiveCallbackInterface *> callbacks =
-                        this->live_payload_callbacks[item->label];
+                        this->live_payload_callbacks[iter->first];
             for (int i = 0; i < callbacks.size(); i++) {
-                callbacks[i]->receive_payload(
-                    item->label, item->neuron_id, payload);
+
+                callbacks[i]->receive_payloads(
+                    (char *) label.c_str(), payloads->size(), &((*payloads)[0]));
             }
         }
     }
