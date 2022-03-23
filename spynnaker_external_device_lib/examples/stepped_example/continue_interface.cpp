@@ -30,6 +30,10 @@ void ContinueInterface::spikes_start(
     for (int neuron_id = 0; neuron_id < 100; neuron_id += 20){
         sleep(1);
         printf("Sending continue\n");
-        connection->continue_run();
+        try {
+            connection->continue_run();
+        } catch (char const *msg) {
+            printf("%s \n", msg);
+        }
     }
 }
