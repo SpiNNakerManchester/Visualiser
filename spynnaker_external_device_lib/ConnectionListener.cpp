@@ -64,10 +64,16 @@ void ConnectionListener::run(){
             pthread_cond_signal(&(this->data_to_process_condition));
             pthread_mutex_unlock(&(this->data_to_process_mutex));
         }
-        catch (std::exception& e){
-            if (!this->_done){
+        catch (std::exception& e) {
+            if (!this->_done) {
                 printf("thrown a error \n");
                 std::cerr << "exception caught: " << e.what() << '\n';
+            }
+        }
+        catch (char const *msg) {
+            if (!this->_done) {
+                printf("thrown a error \n");
+                std::cerr << "exception message caught: " << msg << '\n';
             }
         }
     }
