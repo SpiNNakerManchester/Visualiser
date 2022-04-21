@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import random
-import spynnaker8 as Frontend
+import pyNN.spiNNaker as Frontend
 import time
 from threading import Condition
 from pyNN.utility.plotting import Figure, Panel
