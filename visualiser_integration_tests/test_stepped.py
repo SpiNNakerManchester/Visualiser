@@ -16,6 +16,7 @@ import spynnaker8 as p
 import traceback
 import subprocess
 import re
+import sys
 from visualiser_example_binaries import binary_path
 
 
@@ -25,7 +26,7 @@ def test_stepped():
     #             Start the external sender                    #
     ############################################################
     stepped = subprocess.Popen(binary_path("stepped_receiver"),
-                                stderr=subprocess.PIPE)
+                               stderr=subprocess.PIPE)
     firstline = str(stepped.stderr.readline(), "UTF-8")
     match = re.match("^Listening on (.*)$", firstline)
     if not match:
@@ -43,11 +44,12 @@ def test_stepped():
     p.external_devices.run_sync(100, 20)
     p.end()
 
-    last_line = str(stepped.stderr.readline(), "UTF-8")
-    print(last_line)
-    print("Waiting for stepped to stop...")
+    print("Waiting for stepped to stop...", file=sys.stderr)
     stepped.wait()
-    print("Done")
+    print("Done", file=sys.stderr)
+
+    last_line = str(stepped.stderr.readline(), "UTF-8")
+    print(last_line, file=sys.stderr)
 
     # Check spike count, assuming some might get lost
     match = re.match("^Received (.*) spikes$", last_line)

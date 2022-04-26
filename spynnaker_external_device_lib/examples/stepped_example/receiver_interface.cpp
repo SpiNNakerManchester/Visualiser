@@ -16,9 +16,11 @@
  */
 #include "receiver_interface.h"
 #include <stdio.h>
+#include <mutex>
 
 void ReceiverInterface::receive_spikes(
         char *label, int time, int n_spikes, int* spikes){
+    std::lock_guard<std::mutex> lock(*mtx);
     for (int neuron_id_position = 0;  neuron_id_position < n_spikes;
             neuron_id_position++){
          printf("Received spike at time %d, from %s - %d \n",

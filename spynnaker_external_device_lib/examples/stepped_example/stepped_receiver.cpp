@@ -20,6 +20,7 @@
 #include "continue_interface.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <mutex>
 #ifdef WIN32
 #define sleep(n) Sleep(n)
 #endif
@@ -31,11 +32,12 @@ int main(int argc, char **argv){
         char* receive_labels[1] = {(char *) receive_label};
         char* send_labels[0];
         char const* local_host = NULL;
+        std::mutex mtx;
         SpynnakerLiveSpikesConnection connection = SpynnakerLiveSpikesConnection(
             1, receive_labels, 0, send_labels, (char*) local_host);
         fprintf(stderr, "Listening on %u\n", connection.get_local_port());
         // build the SpikeReceiveCallbackInterface
-        ReceiverInterface* receiver_callback = new ReceiverInterface();
+        ReceiverInterface* receiver_callback = new ReceiverInterface(&mtx);
         // register the callback with the SpynnakerLiveSpikesConnection
         connection.add_receive_callback((char*) receive_label, receiver_callback);
 
@@ -46,9 +48,10 @@ int main(int argc, char **argv){
         connection.add_pause_stop_callback((char *) receive_label, wait_for_stop);
 
         wait_for_stop->wait_for_stop();
+        std::lock_guard<std::mutex> lock(mtx);
         fprintf(stderr, "Received %u spikes", receiver_callback->get_n_spikes());
     }
-    catch (char const* msg){
-        printf("%s \n", msg);
+    catch (const char* msg){
+        printf("Caught: %s \n", msg);
     }
 }
