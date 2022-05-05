@@ -68,7 +68,9 @@ int main(int argc, char **argv){
         WaitForStop *wait_for_stop = new WaitForStop();
         connection.add_pause_stop_callback((char *) label1, wait_for_stop);
         wait_for_stop->wait_for_stop();
+        (void) pthread_mutex_lock(&count_mutex);
         fprintf(stderr, "Received %u spikes", receiver_callback->get_n_spikes());
+        (void) pthread_mutex_unlock(&count_mutex);
     }
     catch (char const* msg){
         printf("%s \n", msg);
