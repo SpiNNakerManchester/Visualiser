@@ -34,6 +34,7 @@ def test_stepped():
         raise Exception(
             f"Stepped returned unknown output: {firstline}")
     stepped_port = int(match.group(1))
+    print(f"Listen port = {stepped_port}", file=sys.stderr)
 
     p.setup(1.0)
     pop = p.Population(

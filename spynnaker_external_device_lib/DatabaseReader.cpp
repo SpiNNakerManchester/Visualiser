@@ -116,34 +116,6 @@ ip_tag_info *DatabaseReader::get_live_output_details(char *label) {
     return tag_info;
 }
 
-reverse_ip_tag_info *DatabaseReader::get_live_input_details(char *label) {
-    sqlite3_stmt *compiled_statment = db_prepare(
-        "SELECT * FROM app_input_tag_view WHERE application_label=\"%q\"",
-        label);
-
-    if (sqlite3_step(compiled_statment) != SQLITE_ROW) {
-        fail("No reverse IP tag found for population %s\n", label);
-    }
-
-    reverse_ip_tag_info *tag_info = (reverse_ip_tag_info *)
-        malloc(sizeof(reverse_ip_tag_info));
-    tag_info->board_address = get_column_string_copy(compiled_statment, 0);
-    tag_info->port = sqlite3_column_int(compiled_statment, 1);
-    return tag_info;
-}
-
-int DatabaseReader::get_n_neurons(char *label) {
-    sqlite3_stmt *compiled_statment = db_prepare(
-        "SELECT no_atoms FROM Application_vertices"
-        " WHERE vertex_label = \"%q\"", label);
-
-    if (sqlite3_step(compiled_statment) != SQLITE_ROW) {
-        fail("Population %s not found\n", label);
-    }
-
-    return sqlite3_column_int(compiled_statment, 0);
-}
-
 float DatabaseReader::get_configuration_parameter_value(char *parameter_name) {
     sqlite3_stmt *compiled_statment = db_prepare(
         "SELECT value FROM configuration_parameters"
