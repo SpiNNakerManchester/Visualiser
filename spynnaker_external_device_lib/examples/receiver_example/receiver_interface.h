@@ -15,13 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../SpynnakerLiveSpikesConnection.h"
+#include <mutex>
 
 class ReceiverInterface : public SpikeReceiveCallbackInterface {
 public:
+    ReceiverInterface(std::mutex *mtx) : mtx(mtx){};
     void receive_spikes(char *label, int time, int n_spikes, int* spikes);
     int get_n_spikes() {
         return this->n_spikes;
     }
 private:
     int n_spikes = 0;
+    std::mutex *mtx;
+
 };
