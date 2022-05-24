@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <mutex>
+#include <iostream>
 #ifdef WIN32
 #define sleep(n) Sleep(n)
 #endif
@@ -35,7 +36,7 @@ int main(int argc, char **argv){
         std::mutex mtx;
         SpynnakerLiveSpikesConnection connection = SpynnakerLiveSpikesConnection(
             1, receive_labels, 0, send_labels, (char*) local_host);
-        fprintf(stderr, "Listening on %u\n", connection.get_local_port());
+        std::cerr << "Listening on " << connection.get_local_port() << "\n";
         // build the SpikeReceiveCallbackInterface
         ReceiverInterface* receiver_callback = new ReceiverInterface(&mtx);
         // register the callback with the SpynnakerLiveSpikesConnection
@@ -49,9 +50,12 @@ int main(int argc, char **argv){
 
         wait_for_stop->wait_for_stop();
         std::lock_guard<std::mutex> lock(mtx);
-        fprintf(stderr, "Received %u spikes", receiver_callback->get_n_spikes());
+        std::cerr << "Received " << receiver_callback->get_n_spikes() << " spikes\n";
     }
-    catch (const char* msg){
-        printf("Caught: %s \n", msg);
+    catch (std::exception &e){
+        std::cout << "Exception caught: " << e.what() << "\n";
+    }
+    catch (...) {
+        std::cout << "Unknown exception caught\n";
     }
 }
