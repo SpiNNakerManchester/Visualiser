@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <iostream>
 #ifdef WIN32
 #define sleep(n) Sleep(n)
 #endif
@@ -36,7 +37,7 @@ int main(int argc, char **argv){
         SpynnakerLiveSpikesConnection connection =
             SpynnakerLiveSpikesConnection(
                 0, receive_labels, 2, send_labels, (char*) local_host);
-        fprintf(stderr, "Listening on %u\n", connection.get_local_port());
+        std::cerr << "Listening on " << connection.get_local_port() << "\n";
         // build the SpikeReceiveCallbackInterface
         pthread_mutex_t count_mutex;
         pthread_mutex_init(&count_mutex, NULL);
@@ -55,7 +56,10 @@ int main(int argc, char **argv){
         connection.add_pause_stop_callback((char *) send_label1, wait_for_stop);
         wait_for_stop->wait_for_stop();
     }
-    catch (char const* msg){
-        printf("%s \n", msg);
+    catch (std::exception &e){
+        std::cout << "Exception caught: " << e.what() << "\n";
+    }
+    catch (...) {
+        std::cout << "Unknown exception caught\n";
     }
 }

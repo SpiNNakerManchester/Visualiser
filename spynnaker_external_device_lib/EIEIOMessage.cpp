@@ -64,7 +64,7 @@ int EIEIOElement::convert_to_bytes(unsigned char* data, int offset, int format) 
         offset += 4;
     }
     else {
-        throw "Invalid format type, please fix and try again";
+        throw std::invalid_argument("Invalid format type, please fix and try again");
     }
     if (this->_has_payload){
         if (format == KEY_PAYLOAD_16_BIT){
@@ -80,7 +80,7 @@ int EIEIOElement::convert_to_bytes(unsigned char* data, int offset, int format) 
             offset += 4;
         }
         else{
-            throw "Invalid format type, please fix and try again";
+            throw std::invalid_argument("Invalid format type, please fix and try again");
         }
     }
     return offset;
@@ -224,7 +224,7 @@ int EIEIOHeader::get_timestamp(){
         return this->_payload_prefix;
     }
     else{
-        throw "This message does not contain a time stamp";
+        throw std::invalid_argument("This message does not contain a time stamp");
     }
 }
 

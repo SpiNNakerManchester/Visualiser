@@ -16,6 +16,7 @@
  */
 #include "UDPConnection.h"
 #include <exception>
+#include <stdexcept>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -35,14 +36,14 @@ UDPConnection::UDPConnection(
 
     this->sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (this->sock == 0) {
-        throw "Socket could not be created";
+        throw std::runtime_error("Socket could not be created");
     }
 
     this->local_ip_address = htonl(INADDR_ANY);
     if (local_host != NULL) {
         struct hostent *lookup_address = gethostbyname(local_host);
         if (lookup_address == NULL) {
-            throw "local_host address not found";
+            throw std::invalid_argument("local_host address not found");
         }
 
         memcpy(&this->local_ip_address, lookup_address->h_addr,
@@ -57,7 +58,7 @@ UDPConnection::UDPConnection(
 
     if (bind(this->sock, (struct sockaddr *) &local_address,
              sizeof(local_address)) < 0) {
-        throw "Error binding to local address";
+        throw std::runtime_error("Error binding to local address");
     }
 
     this->can_send = false;
@@ -70,7 +71,7 @@ UDPConnection::UDPConnection(
 
         struct hostent *lookup_address = gethostbyname(remote_host);
         if (lookup_address == NULL) {
-            throw "remote_host address not found";
+            throw std::invalid_argument("remote_host address not found");
         }
 
         memcpy(&this->remote_ip_address, lookup_address->h_addr,
@@ -83,14 +84,14 @@ UDPConnection::UDPConnection(
 
         if (connect(this->sock, (struct sockaddr *) &remote_address,
                     sizeof(remote_address)) < 0) {
-            throw "Error connecting to remote address";
+            throw std::runtime_error("Error connecting to remote address");
         }
     }
 
     socklen_t local_address_length = sizeof(local_address);
     if (getsockname(this->sock, (struct sockaddr *) &local_address,
                     &local_address_length) < 0) {
-        throw "Error getting local socket address";
+        throw std::invalid_argument("Error getting local socket address");
     }
 
     this->local_ip_address = local_address.sin_addr.s_addr;
@@ -100,7 +101,7 @@ UDPConnection::UDPConnection(
 int UDPConnection::receive_data(unsigned char *data, int length) {
     int received_length = recv(this->sock, (char *) data, length, 0);
     if (received_length < 0) {
-        throw "Error receiving data";
+        throw std::runtime_error("Error receiving data");
     }
     return received_length;
 }
@@ -111,14 +112,14 @@ int UDPConnection::receive_data_with_address(unsigned char *data, int length,
     int received_length = recvfrom(this->sock, (char *) data, length, 0,
                                    address, (socklen_t *) &address_length);
     if (received_length < 0) {
-        throw "Error receiving data";
+        throw std::runtime_error("Error receiving data with address");
     }
     return received_length;
 }
 
 void UDPConnection::send_data(unsigned char *data, int length) {
     if (send(this->sock, (const char *) data, length, 0) < 0) {
-        throw "Error sending data";
+        throw std::runtime_error("Error sending data");
     }
 }
 
@@ -126,7 +127,7 @@ void UDPConnection::send_data_to(unsigned char *data, int length,
                                  sockaddr* address) {
     if (sendto(this->sock, (const char *) data, length, 0,
                (const struct sockaddr *) address, sizeof(*address)) < 0) {
-        throw "Error sending data";
+        throw std::runtime_error("Error sending data to address");
     }
 }
 

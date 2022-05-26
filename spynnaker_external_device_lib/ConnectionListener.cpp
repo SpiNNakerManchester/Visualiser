@@ -66,14 +66,17 @@ void ConnectionListener::run(){
         }
         catch (std::exception& e) {
             if (!this->_done) {
-                printf("thrown a error \n");
                 std::cerr << "exception caught: " << e.what() << '\n';
             }
         }
         catch (char const *msg) {
             if (!this->_done) {
-                printf("thrown a error \n");
                 std::cerr << "exception message caught: " << msg << '\n';
+            }
+        }
+        catch (...) {
+            if (!this->_done) {
+                std::cerr << "unknown exception caught\n";
             }
         }
     }
