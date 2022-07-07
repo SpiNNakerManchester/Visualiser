@@ -22,6 +22,8 @@
 #include <set>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <iostream>
 
 SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         int n_receive_labels, char **receive_labels,
@@ -334,6 +336,8 @@ void SpynnakerLiveSpikesConnection::handle_time_packet(
                 key_times_labels[time_label] = ids;
             }
             ids->push_back(item->neuron_id);
+        } else {
+            std::cout << "Unknown key " << key << "\n" << std::flush;
         }
     }
     for (std::map<std::pair<int, std::string>,
