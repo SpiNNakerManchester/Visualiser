@@ -151,10 +151,10 @@ def test_sender_receiver():
     n_spikes += sum(len(s) for s in spikes_backward)
     # Check spike count, assuming some might get lost
     match = re.match("^Received (.*) spikes$", last_line)
-    assert(match)
-    assert(n_spikes // 2 <= int(match.group(1)) <= n_spikes)
+    assert match
+    assert n_spikes // 2 <= int(match.group(1)) <= n_spikes
     # Received spikes might also get lost; 6 expected total, but 3 is fine
-    assert(n_spikes >= 300)
+    assert n_spikes >= 300
 
 
 if __name__ == "__main__":
