@@ -196,8 +196,8 @@ def test_receiver():
 
     # Check spike count, assuming some might get lost
     match = re.match("^Received (.*) spikes$", last_line)
-    assert(match)
-    assert(n_spikes // 2 <= int(match.group(1)) <= n_spikes)
+    assert match
+    assert n_spikes // 2 <= int(match.group(1)) <= n_spikes
 
 
 if __name__ == "__main__":
