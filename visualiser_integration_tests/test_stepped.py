@@ -31,7 +31,7 @@ def test_stepped():
     match = re.match("^Listening on (.*)$", firstline)
     if not match:
         receiver.kill()
-        raise Exception(
+        raise ValueError(
             f"Stepped returned unknown output: {firstline}")
     stepped_port = int(match.group(1))
     print(f"Listen port = {stepped_port}", file=sys.stderr)
