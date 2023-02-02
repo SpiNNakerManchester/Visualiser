@@ -56,7 +56,7 @@ def test_sender():
     match = re.match("^Listening on (.*)$", firstline)
     if not match:
         receiver.kill()
-        raise Exception(
+        raise ValueError(
             f"Sender returned unknown output: {firstline}")
     sender_port = int(match.group(1))
 

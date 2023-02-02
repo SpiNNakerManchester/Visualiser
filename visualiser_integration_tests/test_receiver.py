@@ -81,7 +81,7 @@ def test_receiver():
     match = re.match("^Listening on (.*)$", firstline)
     if not match:
         receiver.kill()
-        raise Exception(f"Receiver returned unknown output: {firstline}")
+        raise ValueError(f"Receiver returned unknown output: {firstline}")
     receiver_port = int(match.group(1))
 
     ############################################################
