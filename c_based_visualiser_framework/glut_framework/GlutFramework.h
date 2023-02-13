@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 The University of Manchester
+ * Copyright (c) 2010-2023 The University of Manchester
  * based on work Copyright (c) 2010 Paul Solt, paulsolt@gmail.com
  * Originally released under the MIt License
  *
