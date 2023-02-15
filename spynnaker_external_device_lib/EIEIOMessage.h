@@ -93,9 +93,9 @@ public:
     void increment_count();
     static int get_max_size();
     int get_data(unsigned char* data);
+    EIEIOHeader* _header;
 
 private:
-    EIEIOHeader* _header;
     std::vector<EIEIOElement*> _data;
     int _position_read;
 
