@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2010-2023 The University of Manchester
+ * Copyright (c) 2015 The University of Manchester
  * based on work Copyright (c) 2010 Paul Solt, paulsolt@gmail.com
+ * https://github.com/PaulSolt/GLUT-Object-Oriented-Framework
  * Originally released under the MIt License
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
