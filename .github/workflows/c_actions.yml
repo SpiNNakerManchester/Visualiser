@@ -61,3 +61,7 @@ jobs:
       run: |
         sudo apt-get -q install doxygen --fix-missing
         make doxygen
+
+    - name: Validate CITATION.cff
+      if: matrix.python-version == 3.8
+      uses: dieghernan/cff-validator@main
