@@ -122,7 +122,7 @@ public:
 
     /** The keyboard function is called when a special key is pressed down.
      (F1 keys, Home, Inser, Delete, Page Up/Down, End, arrow keys)
-     http://www.opengl.org/resources/libraries/glut/spec3/node54.html
+     https://www.opengl.org/resources/libraries/glut/spec3/node54.html
      @param key - the key press
      @param x - the x coordinate of the mouse
      @param y - the y coordinate of the mouse
