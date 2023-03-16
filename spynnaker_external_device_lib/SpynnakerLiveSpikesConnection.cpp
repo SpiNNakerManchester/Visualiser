@@ -295,6 +295,7 @@ void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
         (struct start_callback_info *) start_info;
     start_callback_info->start_callback->spikes_start(
         start_callback_info->label, start_callback_info->connection);
+    delete start_callback_info;
     return NULL;
 }
 
@@ -326,6 +327,7 @@ void *SpynnakerLiveSpikesConnection::_call_pause_stop_callback(
         (struct pause_stop_callback_info *) pause_stop_info;
     pause_stop_callback_info->pause_stop_callback->spikes_stop(
         pause_stop_callback_info->label, pause_stop_callback_info->connection);
+    delete pause_stop_callback_info;
     return NULL;
 }
 
@@ -339,6 +341,7 @@ void *SpynnakerLiveSpikesConnection::_update_tags(void *update_info) {
         }
         sleep(10);
     }
+    delete update_tags_info;
     return NULL;
 }
 
@@ -393,6 +396,7 @@ void SpynnakerLiveSpikesConnection::handle_time_packet(
             callbacks[i]->receive_spikes(
                 (char *) label.c_str(), time, spikes->size(), &((*spikes)[0]));
         }
+        delete iter->second;
     }
 }
 

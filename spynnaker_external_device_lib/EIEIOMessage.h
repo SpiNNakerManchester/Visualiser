@@ -84,6 +84,7 @@ class EIEIOMessage {
 public:
     EIEIOMessage(unsigned char *data, int offset);
     EIEIOMessage(EIEIOHeader* header);
+    ~EIEIOMessage();
     bool has_timestamps();
     bool is_next_element();
     EIEIOElement* get_next_element();

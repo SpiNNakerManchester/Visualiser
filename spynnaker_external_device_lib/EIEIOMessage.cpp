@@ -316,6 +316,13 @@ EIEIOMessage::EIEIOMessage(unsigned char *data, int offset) {
     this->_position_read = 0;
 }
 
+EIEIOMessage::~EIEIOMessage() {
+    delete _header;
+    for (uint32_t i = 0; i < _data.size(); i++) {
+        delete _data[i];
+    }
+}
+
 //! \brief reads in a EIEIO element from the data with 16 bit key and
 //! 16 bit payload.
 void EIEIOMessage::read_in_16_key_payload_message(

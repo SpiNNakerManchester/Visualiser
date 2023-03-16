@@ -104,6 +104,7 @@ void ConnectionListener::Reader::run() {
                 iterator != this->listener->_callbacks.end(); ++iterator){
              (*iterator)->receive_packet_callback(message);
         }
+        delete message;
 
         pthread_mutex_lock(&(this->listener->free_data_mutex));
         this->listener->free_data.push(data);
