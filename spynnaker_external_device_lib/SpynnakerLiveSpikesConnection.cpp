@@ -25,6 +25,21 @@
 #include <unistd.h>
 #include <iostream>
 
+static void update_tag(ip_tag_info *recv_info, UDPConnection *connection) {
+    SCPIPTagSetMessage msg = SCPIPTagSetMessage(
+                            255, 255, recv_info->tag, recv_info->strip_sdp);
+    struct sockaddr *s_addr = get_address(recv_info->board_address,
+            SCP_SCAMP_PORT);
+    unsigned char data[sizeof(SCPIPTagSetMessage) + 2];
+    memcpy(&data[2], &msg, sizeof(SCPIPTagSetMessage));
+    data[0] = 0;
+    data[1] = 0;
+    connection->send_data_to(
+            data, sizeof(SCPIPTagSetMessage) + 2, s_addr);
+    connection->receive_data(data, sizeof(SCPIPTagSetMessage));
+    free(s_addr);
+}
+
 SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
         int n_receive_labels, char **receive_labels,
         int n_send_labels, char **send_labels,
@@ -71,6 +86,7 @@ SpynnakerLiveSpikesConnection::SpynnakerLiveSpikesConnection(
     this->next_sync = SYNC_1;
     this->root_chip_address = NULL;
     this->app_id = 0;
+    this->running = false;
 }
 
 void SpynnakerLiveSpikesConnection::add_initialize_callback(
@@ -151,19 +167,7 @@ void SpynnakerLiveSpikesConnection::read_database_callback(
             // Update the IP Tag to ensure reception
             try {
                 ip_tag_info *recv_info = reader->get_live_output_details(receive_label);
-                SCPIPTagSetMessage msg = SCPIPTagSetMessage(
-                        255, 255, recv_info->tag, recv_info->strip_sdp);
-                struct sockaddr *s_addr = get_address(recv_info->board_address,
-                        SCP_SCAMP_PORT);
-                unsigned char data[sizeof(SCPIPTagSetMessage) + 2];
-                memcpy(&data[2], &msg, sizeof(SCPIPTagSetMessage));
-                data[0] = 0;
-                data[1] = 0;
-                this->receiver_connection->send_data_to(
-                        data, sizeof(SCPIPTagSetMessage) + 2, s_addr);
-                this->receiver_connection->receive_data(data, sizeof(SCPIPTagSetMessage));
-                free(recv_info);
-                free(s_addr);
+                receive_tag_info.push_back(recv_info);
             } catch (const char * str) {
                 fprintf(stderr, "Error sending Tag update to SpiNNaker, continuing\n");
             }
@@ -243,6 +247,21 @@ struct pause_stop_callback_info {
     }
 };
 
+struct update_tags_info {
+    SpynnakerLiveSpikesConnection *connection;
+    UDPConnection *receiver_connection;
+    bool *running;
+    std::vector<ip_tag_info *> *tag_info;
+
+    update_tags_info(SpynnakerLiveSpikesConnection *connection,
+            UDPConnection *receiver_connection, bool *running,
+            std::vector<ip_tag_info *> *tag_info) {
+        this->connection = connection;
+        this->receiver_connection = receiver_connection;
+        this->running = running;
+        this->tag_info = tag_info;
+    }
+};
 
 void SpynnakerLiveSpikesConnection::start_callback() {
     for (std::map<
@@ -261,6 +280,13 @@ void SpynnakerLiveSpikesConnection::start_callback() {
                 (void *) start_info);
         }
     }
+    pthread_t update_tag_thread;
+    struct update_tags_info *update_info = new struct update_tags_info(
+            this, this->receiver_connection, &this->running,
+            &this->receive_tag_info);
+    running = true;
+    pthread_create(&update_tag_thread, NULL, _update_tags,
+            (void *) update_info);
 }
 
 
@@ -274,6 +300,7 @@ void *SpynnakerLiveSpikesConnection::_call_start_callback(void *start_info) {
 
 
 void SpynnakerLiveSpikesConnection::pause_stop_callback() {
+    running = false;
     for (std::map<
                 std::string,
                 std::vector<SpikesPauseStopCallbackInterface *> >::iterator
@@ -299,6 +326,19 @@ void *SpynnakerLiveSpikesConnection::_call_pause_stop_callback(
         (struct pause_stop_callback_info *) pause_stop_info;
     pause_stop_callback_info->pause_stop_callback->spikes_stop(
         pause_stop_callback_info->label, pause_stop_callback_info->connection);
+    return NULL;
+}
+
+void *SpynnakerLiveSpikesConnection::_update_tags(void *update_info) {
+    struct update_tags_info *update_tags_info =
+            (struct update_tags_info *) update_info;
+    while (*(update_tags_info->running)) {
+        for (uint i = 0; i < update_tags_info->tag_info->size(); i++) {
+            update_tag((*(update_tags_info->tag_info))[i],
+                    update_tags_info->receiver_connection);
+        }
+        sleep(10);
+    }
     return NULL;
 }
 
@@ -554,6 +594,10 @@ void SpynnakerLiveSpikesConnection::continue_run() {
 }
 
 SpynnakerLiveSpikesConnection::~SpynnakerLiveSpikesConnection(){
-pthread_mutex_destroy(&(this->start_mutex));
+    running = false;
+    pthread_mutex_destroy(&(this->start_mutex));
     pthread_cond_destroy(&(this->start_condition));
+    for (int i = 0; i < this->receive_tag_info.size(); i++) {
+        free(receive_tag_info[i]);
+    }
 }

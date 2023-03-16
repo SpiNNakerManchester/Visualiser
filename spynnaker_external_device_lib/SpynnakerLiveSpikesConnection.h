@@ -147,11 +147,13 @@ public:
 private:
     static void *_call_start_callback(void *start_callback_info);
     static void *_call_pause_stop_callback(void *pause_stop_info);
+    static void *_update_tags(void *update_info);
     void handle_time_packet(EIEIOMessage *message);
     void handle_no_time_packet(EIEIOMessage *message);
 
     std::vector<char *> receive_labels;
     std::vector<char *> send_labels;
+    std::vector<ip_tag_info *> receive_tag_info;
     std::map<std::string, send_details *> send_address_details;
     std::map<std::string, std::map<int, int> *> neuron_id_to_key_maps;
     std::map<int, struct label_and_neuron_id *> key_to_neuron_id_and_label_map;
@@ -175,6 +177,7 @@ private:
     struct sockaddr *root_chip_address;
     unsigned char app_id;
     sync_type next_sync;
+    bool running;
 };
 
 #endif /* _SPYNNAKER_LIVE_SPIKES_CONNECTION_H_ */
