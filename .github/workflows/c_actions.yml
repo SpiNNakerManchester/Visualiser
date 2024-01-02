@@ -63,5 +63,5 @@ jobs:
         make doxygen
 
     - name: Validate CITATION.cff
-      if: matrix.python-version == 3.8
+      if: matrix.python-version == 3.12
       uses: dieghernan/cff-validator@main
