@@ -45,11 +45,11 @@ jobs:
         repository: SpiNNakerManchester/SupportScripts
         path: support
     - name: "Lint external device lib using Vera++"
-      uses: ./support/actions/vera
+      uses: SpiNNakerManchester/SupportScripts/actions/vera@main
       with:
         base-dir: spynnaker_external_device_lib
     - name: "Lint visualiser framework using Vera++"
-      uses: ./support/actions/vera
+      uses: SpiNNakerManchester/SupportScripts/actions/vera@main
       with:
         base-dir: c_based_visualiser_framework
     - name: Run rat copyright enforcement
