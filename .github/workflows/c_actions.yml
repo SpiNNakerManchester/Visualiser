@@ -53,7 +53,7 @@ jobs:
       with:
         base-dir: c_based_visualiser_framework
     - name: Run rat copyright enforcement
-      uses: SpiNNakerManchester/SupportScripts/actions/check-copyrights@action-dash
+      uses: SpiNNakerManchester/SupportScripts/actions/check-copyrights@main
       with:
         config-file: rat_asl20.xml
 
